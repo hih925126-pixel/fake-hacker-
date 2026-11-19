@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NEBULA — Tactical Operations Simulator</title>
+<meta name="description" content="NEBULA is a fictional cybersecurity operations simulator: terminal, SOC dashboards, network maps and missions. Everything is simulated locally.">
+<meta name="theme-color" content="#07090a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307090a'/%3E%3Cpath d='M16 3l11 6.500v13L16 29 5 22.500v-13z' fill='none' stroke='%234bd88b' stroke-width='2'/%3E%3Cpath d='M11 21V11l10 10V11' fill='none' stroke='%234bd88b' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root{--bg0:#06080a;--bg1:#0a0d0e;--bg2:#0f1314;--bg3:#151a1b;--bg4:#1b2223;--line:#1f2829;--line2:#2c3839;
+ --tx:#d3dada;--tx2:#9aa6a6;--tx3:#667272;--wh:#eef2f2;--g:#4bd88b;--g2:#2f9c62;--g3:#1d5e3d;--gg:rgba(75,216,139,.22);
+ --r:#d9534f;--r2:#7e2c2a;--a:#dba43e;--a2:#7a5c20;--b:#6fa9bd;--ac:var(--g);
+ --mono:"JetBrains Mono","Cascadia Mono","Cascadia Code",Consolas,"DejaVu Sans Mono","Roboto Mono",Menlo,monospace;
+ --ui:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif}
+body.theme-charcoal{--bg0:#0c0e0f;--bg1:#121516;--bg2:#181c1d;--bg3:#202526;--bg4:#282e2f;--line:#2a3233;--line2:#3a4546}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg0);color:var(--tx);font:13px/1.45 var(--ui);overflow:hidden;-webkit-font-smoothing:antialiased}
+#root{position:fixed;inset:0;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+code,kbd,pre{font-family:var(--mono)}
+code{background:var(--bg3);padding:1px 5px;border:1px solid var(--line);border-radius:2px;font-size:11.5px;color:var(--g)}
+kbd{font-size:10px;border:1px solid var(--line2);border-bottom-width:2px;padding:0 4px;border-radius:2px;color:var(--tx2);background:var(--bg3)}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:0}::-webkit-scrollbar-track{background:transparent}
+.c-g{color:var(--g)}.c-r{color:var(--r)}.c-a{color:var(--a)}.dim{color:var(--tx3)}.sm{font-size:11.5px}
+.lbl{font-size:9.5px;letter-spacing:.14em;color:var(--tx3);text-transform:uppercase;font-weight:600}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tx3);flex:none}
+.dot.ok{background:var(--g);box-shadow:0 0 6px var(--gg)}.dot.warn{background:var(--a)}.dot.err{background:var(--r)}.dot.off{background:#4a5454}
+.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--g);margin-right:3px;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(75,216,139,.55)}100%{box-shadow:0 0 0 7px rgba(75,216,139,0)}}
+body.no-anim *,body.no-anim *::before,body.no-anim *::after{animation:none!important;transition:none!important}
+/* buttons */
+.btn{background:var(--bg3);border:1px solid var(--line2);color:var(--tx);padding:6px 12px;border-radius:2px;font-size:11px;letter-spacing:.08em;font-weight:600;text-transform:uppercase;transition:.15s}
+.btn:hover{border-color:var(--g2);color:var(--wh);background:var(--bg4)}.btn:disabled{opacity:.45;cursor:default}
+.btn.pri{background:var(--g3);border-color:var(--g2);color:var(--wh)}.btn.pri:hover{background:var(--g2)}
+.btn.danger{border-color:var(--r2);color:#e9a5a2}.btn.danger:hover{background:var(--r2);color:var(--wh);border-color:var(--r)}
+.btn.sm{padding:2px 8px;font-size:10px}.btn.on{background:var(--g3);border-color:var(--g2);color:var(--wh)}
+.lnk{background:none;border:0;color:var(--tx3);font-size:10px;letter-spacing:.1em;padding:0}.lnk:hover{color:var(--g)}
+.ibtn{width:30px;height:30px;display:grid;place-items:center;background:var(--bg3);border:1px solid var(--line2);border-radius:2px;padding:0}
+.ibtn svg{width:16px;height:16px;fill:none;stroke:var(--tx2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.ibtn:hover svg{stroke:var(--g)}.ibtn.off svg{stroke:var(--tx3)}
+.sw{width:38px;height:20px;border-radius:10px;border:1px solid var(--line2);background:var(--bg3);position:relative;padding:0;flex:none}
+.sw i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--tx3);transition:.18s}
+.sw.on{border-color:var(--g2);background:var(--g3)}.sw.on i{left:20px;background:var(--g)}.sw.sm{width:28px;height:15px}.sw.sm i{width:9px;height:9px;top:2px}.sw.sm.on i{left:15px}
+input[type=range]{accent-color:var(--g);width:200px}
+/* boot */
+#boot{position:absolute;inset:0;background:var(--bg0);display:grid;place-items:center;z-index:50;transition:opacity .5s}#boot.leaving{opacity:0}
+.boot-inner{width:min(720px,92vw);font-family:var(--mono)}
+.boot-logo{color:var(--g);font-size:clamp(8px,2.2vw,15px);line-height:1.15;margin:0 0 18px;text-shadow:0 0 12px var(--gg)}
+.boot-log{height:260px;overflow:hidden;font-size:12px;color:var(--tx2);display:flex;flex-direction:column;justify-content:flex-end}
+.boot-bar{height:3px;background:var(--line);margin:14px 0 10px}.boot-bar i{display:block;height:100%;width:0;background:var(--g);box-shadow:0 0 8px var(--gg);transition:width .2s}
+.boot-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.14em;color:var(--tx3);min-height:34px}
+.boot-note{margin-top:14px;font-size:10.5px;color:var(--tx3);font-family:var(--ui)}
+/* app grid */
+#app{position:absolute;inset:0;display:grid;grid-template-columns:176px minmax(0,1fr);grid-template-rows:48px minmax(0,1fr) 24px;grid-template-areas:"top top" "nav main" "stat stat"}
+#app[hidden],[hidden]{display:none!important}
+#topbar{grid-area:top;display:flex;align-items:center;gap:18px;padding:0 14px;background:var(--bg1);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:166px}.logo-mark{width:28px;height:28px;color:var(--g);filter:drop-shadow(0 0 5px var(--gg))}
+.bname{font-weight:700;letter-spacing:.32em;font-size:15px;color:var(--wh);position:relative}.bsub{font-size:8.5px;letter-spacing:.16em;color:var(--tx3);margin-top:1px;white-space:nowrap}
+.bname.glitch{animation:glitch .7s steps(2) 1}
+@keyframes glitch{0%{transform:translate(0)}15%{transform:translate(-2px,1px);text-shadow:2px 0 var(--r),-2px 0 var(--g)}30%{transform:translate(2px,-1px);text-shadow:-2px 0 var(--r),2px 0 var(--g)}45%{transform:none;text-shadow:none}60%{transform:translate(1px,0);text-shadow:1px 0 var(--r)}100%{transform:none;text-shadow:none}}
+.tb-mid{display:flex;gap:26px;flex:1;min-width:0}.tb-item{display:flex;flex-direction:column;gap:1px}.tb-item .val,.chip .val{font-family:var(--mono);font-size:12px;color:var(--tx)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.chip{display:flex;flex-direction:column;justify-content:center;padding:2px 10px;border:1px solid var(--line2);background:var(--bg2);height:32px;border-radius:2px}
+.chip.link{flex-direction:row;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--tx3)}.chip.link.up{color:var(--g);border-color:var(--g3)}.chip.link.up .dot{background:var(--g);box-shadow:0 0 6px var(--gg)}
+#chipTarget.has .val{color:var(--a)}
+#nav{grid-area:nav;background:var(--bg1);border-right:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:2px;overflow:auto}
+#nav button{display:flex;align-items:center;gap:11px;background:none;border:0;border-left:2px solid transparent;color:var(--tx2);padding:9px 14px;text-align:left;font-size:12.5px;letter-spacing:.03em}
+#nav button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#nav button span{flex:1}#nav button kbd{opacity:.5}
+#nav button:hover{background:var(--bg3);color:var(--wh)}
+#nav button.on{background:linear-gradient(90deg,rgba(75,216,139,.12),transparent);border-left-color:var(--g);color:var(--g)}
+.nav-foot{margin-top:auto;padding:12px 14px;font-size:9.5px;letter-spacing:.14em;color:var(--tx3);line-height:1.6}
+#main{grid-area:main;overflow:auto;padding:12px;background:var(--bg0);position:relative;min-width:0}
+#statusbar{grid-area:stat;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 12px;background:var(--bg1);border-top:1px solid var(--line);font-size:10.5px;color:var(--tx3);letter-spacing:.06em;white-space:nowrap;overflow:hidden}
+.sb-mid{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis}
+.view{display:none}.view.on{display:block;animation:viewin .28s ease}
+@keyframes viewin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.view-head h2{margin:0 0 4px;font-size:13px;letter-spacing:.16em;color:var(--wh)}.view-head p{margin:0 0 14px;color:var(--tx2);max-width:820px}
+/* panels */
+.panel{background:var(--bg2);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;min-width:0;position:relative}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;width:10px;height:10px;border-left:1px solid var(--g2);border-top:1px solid var(--g2);opacity:.7}
+.ph{display:flex;align-items:center;gap:10px;height:30px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--bg1);flex:none}
+.pt{font-size:10.5px;letter-spacing:.16em;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:7px;white-space:nowrap}.pt::before{content:"";width:5px;height:5px;background:var(--g)}
+.pm{margin-left:auto;font-size:10px;color:var(--tx3);font-family:var(--mono);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pa{margin-left:auto;display:flex;gap:6px}.ph .pa+.pm{margin-left:0}.pm+.pa{margin-left:0}
+.pb{padding:10px;flex:1;min-height:0}.pb.nopad{padding:0}.pb.scroll,.scroll{overflow:auto}
+.pfoot{display:flex;gap:18px;padding:6px 10px;border-top:1px solid var(--line);font-size:10px;color:var(--tx3);letter-spacing:.08em;flex-wrap:wrap}.pfoot b{color:var(--tx);font-family:var(--mono);font-weight:500}.pfoot.col{flex-direction:column;gap:8px}
+.cv{display:block;width:100%;height:100%;min-height:120px}.cv.sm{height:64px;min-height:64px;margin-top:10px}
+.sub-h{font-size:9.5px;letter-spacing:.16em;color:var(--tx3);margin:10px 0 6px;font-weight:600}
+.empty{color:var(--tx3);padding:14px;text-align:center;font-size:12px}
+/* dashboard */
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.stat{background:var(--bg2);border:1px solid var(--line);padding:8px 11px;border-radius:3px;min-width:0}
+.sv{font-family:var(--mono);font-size:15px;color:var(--wh);margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+.sv.ok,.sv.g{color:var(--g)}.sv.a{color:var(--a)}.sv.r{color:var(--r)}.ss{font-size:10.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini,.bar{height:4px;background:var(--line);margin-top:6px;overflow:hidden}.mini i,.bar i{display:block;height:100%;background:var(--g);transition:width .5s;width:0}.bar.big{height:6px;margin-top:10px}
+.segs{display:flex;gap:3px;margin-top:6px}.segs b{flex:1;height:4px;background:var(--line)}.segs b.on.g{background:var(--g)}.segs b.on.a{background:var(--a)}.segs b.on.r{background:var(--r)}.segs.big b{height:8px}
+.dgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:226px 226px 270px;gap:8px}
+.d-term{grid-column:1/8;grid-row:1/3;min-height:0;display:flex}.d-term>.panel{flex:1}
+.d-net{grid-column:8/13;grid-row:1}.d-sec{grid-column:8/13;grid-row:2}.d-obj{grid-column:1/5;grid-row:3}.d-log{grid-column:5/10;grid-row:3}.d-stream{grid-column:10/13;grid-row:3}
+.d-net .pb,.d-sec .pb,.d-obj .pb{overflow:auto}
+.d-sec>.pb{overflow:auto}
+.ind-row{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px}.ind-row.col{grid-template-columns:1fr}
+.ind{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--tx2);min-width:0}.ind span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ind b{font-family:var(--mono);font-size:9.5px;color:var(--g);font-weight:500}.ind .warn+span+b{color:var(--a)}
+.alerts .al,.alerts.wide .al{display:flex;align-items:center;gap:9px;padding:6px 8px;border-left:2px solid var(--line2);background:var(--bg3);margin-bottom:4px}
+.al i{width:7px;height:7px;border-radius:50%;flex:none}.al.CRITICAL{border-color:var(--r)}.al.CRITICAL i{background:var(--r);animation:pulse2 1.4s infinite}.al.HIGH{border-color:#c0734a}.al.HIGH i{background:#c0734a}.al.MEDIUM{border-color:var(--a)}.al.MEDIUM i{background:var(--a)}.al.LOW{border-color:var(--tx3)}.al.LOW i{background:var(--tx3)}
+@keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(217,83,79,.6)}100%{box-shadow:0 0 0 8px rgba(217,83,79,0)}}
+.al-m{flex:1;min-width:0}.al-m b{display:block;font-weight:500;font-size:12px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.al-m span{font-size:10px;color:var(--tx3);font-family:var(--mono)}.al em{font-style:normal;font-size:9.5px;color:var(--tx3);letter-spacing:.1em}.al.acked{opacity:.45}
+.alerts.wide{padding:8px}
+.logs{font-family:var(--mono);font-size:11px}.lg{display:grid;grid-template-columns:60px 46px 74px 1fr;gap:8px;padding:3px 10px;border-bottom:1px solid rgba(255,255,255,.025);animation:login .4s}
+#mnEv .lg{grid-template-columns:60px 46px 1fr}
+@keyframes login{from{background:rgba(75,216,139,.18)}to{background:transparent}}
+.lt{color:var(--tx3)}.ll{font-weight:600;font-size:10px}.lg.INFO .ll{color:var(--g2)}.lg.WARN .ll{color:var(--a)}.lg.ERROR .ll{color:var(--r)}.ls{color:var(--b)}.lm{color:var(--tx2);min-width:0;overflow-wrap:anywhere}.lg.ERROR .lm{color:#e0a3a0}
+.stream{margin:0;padding:8px 10px;font-size:10.5px;line-height:1.5;color:var(--g2);height:100%;overflow:hidden;white-space:pre}
+.olist{list-style:none;margin:8px 0;padding:0}.olist li{display:flex;align-items:flex-start;gap:8px;padding:3px 0;font-size:12px;color:var(--tx2)}.olist li i{width:12px;height:12px;border:1px solid var(--line2);flex:none;margin-top:2px;position:relative}
+.olist li.done{color:var(--tx3);text-decoration:line-through}.olist li.done i{background:var(--g3);border-color:var(--g2)}.olist li.done i::after{content:"";position:absolute;left:3px;top:0;width:3px;height:7px;border:solid var(--g);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.olist li em{margin-left:auto;font-style:normal;font-size:10px;color:var(--g2);font-family:var(--mono);text-decoration:none;white-space:nowrap}
+.mo-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.mo-head b{color:var(--wh);font-size:12.5px}.mo-desc{margin:4px 0;color:var(--tx3);font-size:11.5px}
+.mo-foot{display:flex;align-items:center;gap:10px;font-size:10.5px;color:var(--tx3);font-family:var(--mono)}.mo-foot .bar{flex:1;margin:0}
+.diff{font-size:9px;letter-spacing:.14em;padding:1px 6px;border:1px solid;font-weight:700}.diff.EASY{color:var(--g);border-color:var(--g3)}.diff.MEDIUM{color:var(--a);border-color:var(--a2)}.diff.HARD{color:var(--r);border-color:var(--r2)}
+/* terminal */
+.term-panel{background:#050707;height:100%;min-height:200px}.term-panel .ph{background:#0a0d0e}
+#slotFullTerm{height:calc(100vh - 48px - 24px - 24px);min-height:300px;display:flex}#slotFullTerm>.panel{flex:1}
+#termBody{flex:1;overflow:auto;padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;cursor:text;position:relative;min-height:0}
+.tl{white-space:pre-wrap;overflow-wrap:anywhere;color:#c8d3cf}.tl.indt{padding-left:11ch}.tl.dim{color:var(--tx3)}.tl.ok{color:var(--g)}.tl.warn{color:var(--a)}.tl.err{color:var(--r)}.tl.info{color:var(--b)}.tl.banner{color:var(--g);text-shadow:0 0 10px var(--gg);line-height:1.2;overflow-wrap:normal;white-space:pre}
+.ts{color:#4b5757}.tl.indt .ts{display:none}
+.h-ip{color:var(--b)}.h-ok{color:var(--g)}.h-warn{color:var(--a)}.h-err{color:var(--r)}.h-info{color:var(--b)}.h-hex{color:#a58bd0}.h-flag{color:#d1b27a}.h-path{color:#8cc7a7}.h-cmd{color:var(--g)}
+.pb-b{color:var(--g)}.pb-b em{font-style:normal;color:#243030}.pb-p{color:var(--tx2)}
+.echo{margin-top:6px}.ps-l{color:var(--g2)}.ps-u{color:var(--g);font-weight:600}.ps-h{color:#7fe3ad}.ps-p{color:var(--b)}.ps-s{color:var(--g);font-weight:700}
+.x-cmd{color:var(--g)}.x-arg{color:var(--wh)}.x-flag{color:#d1b27a}.x-sp{color:inherit}
+#promptWrap{margin-top:6px;position:relative}#promptWrap.busy{display:none}.ps-line{position:relative;display:flex;flex-wrap:wrap}
+#cmdin{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;border:0;background:none;color:transparent;font:inherit;padding:0;outline:none}
+.cur{background:var(--g);color:#000!important;animation:blink 1.05s steps(1) infinite}.cur span,.cur .x-cmd,.cur .x-arg,.cur .x-flag,.cur .x-sp{color:#000}
+@keyframes blink{50%{background:transparent;color:inherit}}
+.tl.code{color:#b9c6c1}.c-com{color:#5d716a;font-style:italic}.c-str{color:#d1b27a}.c-kw{color:#4bd88b}.c-pre{color:#a58bd0}.c-num{color:#6fa9bd}.c-fn{color:#e8eded}
+#typerHud{position:sticky;bottom:0;margin-top:8px;padding:5px 8px;background:var(--g3);color:var(--wh);font-size:11px;letter-spacing:.08em}
+#typerBtn.on{background:var(--g3);color:var(--wh);border-color:var(--g)}
+/* targets */
+.tcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.tcard{background:var(--bg2);border:1px solid var(--line);border-top:2px solid var(--ac);padding:14px;display:flex;flex-direction:column;gap:10px;border-radius:3px}.tcard.sel{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.tc-top{display:flex;gap:11px;align-items:flex-start}.tc-tag{width:38px;height:38px;border:1px solid var(--ac);color:var(--ac);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px;flex:none}
+.tc-top h3{margin:0;font-size:14px;letter-spacing:.12em;color:var(--wh)}.tc-type{font-size:10.5px;color:var(--tx3);letter-spacing:.06em}
+.tc-st{margin-left:auto;font-size:9px;letter-spacing:.14em;padding:2px 7px;border:1px solid var(--line2);color:var(--tx3);white-space:nowrap}.tc-st.on{color:var(--g);border-color:var(--g2)}
+.tcard p{margin:0;color:var(--tx2);font-size:12px}.tc-meta{display:grid;grid-template-columns:repeat(3,auto);gap:10px;justify-content:space-between}.tc-meta span{display:block;font-size:9px;letter-spacing:.14em;color:var(--tx3);margin-bottom:2px}.tc-meta b{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--tx);margin-left:4px}.tc-meta div>span+*{vertical-align:middle}
+.tc-act{display:flex;gap:8px;margin-top:auto}.tc-act .btn{flex:1}
+.sec-b{display:inline-flex;gap:2px;vertical-align:middle}.sec-b i{width:9px;height:9px;background:var(--line2)}.sec-b i.on{background:var(--ac)}
+.tshell{--accent:var(--ac)}.thead{display:flex;align-items:center;gap:18px;padding:12px 14px;border:1px solid var(--line);border-top:2px solid var(--ac);background:var(--bg2);margin-bottom:8px;flex-wrap:wrap}
+.tlogo{margin:0;color:var(--ac);font-size:11px;line-height:1.15;min-width:150px}.tinfo h2{margin:0;font-size:18px;letter-spacing:.2em;color:var(--wh)}.tinfo span{font-size:11px;color:var(--tx3)}
+.tsec{display:flex;flex-direction:column;gap:3px;margin-left:auto}.tsec span{font-size:9px;letter-spacing:.14em;color:var(--tx3)}.tsec b{font-size:11px;font-family:var(--mono);font-weight:500;color:var(--ac)}.tbtns{display:flex;gap:8px}
+.tbody{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:8px;align-items:start}.tside{display:flex;flex-direction:column;gap:8px}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.span2{grid-column:span 2}.span3{grid-column:span 3}
+.tshell .panel::before{border-color:var(--ac)}.tshell .pt::before{background:var(--ac)}
+.kvs{display:grid;gap:5px}.kvs>div{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;border-bottom:1px dashed var(--line);padding:2px 0}.kvs span{color:var(--tx3);font-size:10px;letter-spacing:.1em;white-space:nowrap}.kvs b{font-family:var(--mono);font-weight:500;color:var(--tx);text-align:right;font-size:11px;overflow-wrap:anywhere}
+.kvs.row{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 20px}
+.files{list-style:none;margin:0;padding:0;border-right:1px solid var(--line);min-width:200px}.files li{padding:6px 10px;font-family:var(--mono);font-size:11.5px;color:var(--tx2);cursor:pointer;border-left:2px solid transparent}.files li:hover{background:var(--bg3)}.files li.on{border-left-color:var(--ac);background:var(--bg3);color:var(--ac)}
+.filebox{display:grid;grid-template-columns:230px 1fr;gap:12px;padding:0}.viewer{margin:0;padding:10px;font-size:11.5px;color:var(--tx2);white-space:pre-wrap;min-height:150px}
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}.tbl th{text-align:left;font-weight:600;color:var(--tx3);font-size:9.5px;letter-spacing:.12em;padding:6px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg1)}.tbl td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--tx2);white-space:nowrap}.tbl .r{text-align:right}.tbl tr.dis td{opacity:.4}
+.tscroll{overflow:auto;max-height:260px}.tscroll.tall{max-height:340px}
+tr.anom td{background:rgba(219,164,62,.07);color:#e6c98a}tr.flagged td{background:rgba(75,216,139,.08)}.risk{padding:1px 6px;border:1px solid var(--line2)}.risk.mid{color:var(--a);border-color:var(--a2)}.risk.hi{color:var(--r);border-color:var(--r2)}
+.ss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.ss{border:1px solid var(--line);background:var(--bg3);padding:8px}.ss.hot{border-color:var(--a2)}.ss.open{border-color:var(--r2);background:rgba(217,83,79,.07)}
+.ss-h{display:flex;justify-content:space-between;font-size:11px}.ss-h b{color:var(--wh);font-family:var(--mono)}.ss-h span{color:var(--tx3);font-size:10px}.ss-load{height:5px;background:var(--line);margin:8px 0}.ss-load i{display:block;height:100%;background:var(--ac);transition:width .6s}.ss.hot .ss-load i{background:var(--a)}
+.ss-f{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--tx2)}
+.cg-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.cg-top div span{display:block;font-size:9px;letter-spacing:.14em;color:var(--tx3)}.cg-top div b{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--wh)}
+.th-atlas,.th-atlas .tbl,.th-atlas .tlogo,.th-atlas .tinfo{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}.th-atlas .thead{border-top-style:double;border-top-width:4px}
+.atconsole{margin:0;height:200px;overflow:auto;padding:10px;font-size:11.5px;color:var(--ac);background:#050707;line-height:1.4}
+.memgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}.memgrid i{aspect-ratio:1;background:var(--line);transition:background .3s}.memgrid i.a{background:var(--ac)}.memgrid i.b{background:#5e6767}.memgrid i.c{background:var(--a2)}
+/* my network & map */
+.sim-banner{display:flex;gap:14px;align-items:center;padding:8px 12px;border:1px solid var(--a2);background:rgba(219,164,62,.07);margin-bottom:8px;font-size:11.5px;color:var(--tx2);flex-wrap:wrap}.sim-banner b{color:var(--a);letter-spacing:.14em;font-size:11px;white-space:nowrap}
+.mn-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 320px;grid-template-rows:480px 250px;gap:8px}
+.mn-list{grid-column:1;grid-row:1}.mn-topo{grid-column:2;grid-row:1}.mn-detail{grid-column:3;grid-row:1}.mn-fw{grid-column:1;grid-row:2}.mn-ev{grid-column:2;grid-row:2}.mn-tr{grid-column:3;grid-row:2}
+.mn-detail .pb,.mn-fw .pb{overflow:auto}.mn-topo .pb,.mn-tr .pb{min-height:0}
+.devlist{overflow:auto;height:100%}.dev{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;border-left:2px solid transparent}.dev:hover{background:var(--bg3)}.dev.on{background:var(--bg3);border-left-color:var(--g)}.dev b{display:block;font-size:12px;font-weight:500;color:var(--tx)}.dev span{font-size:10.5px;color:var(--tx3);font-family:var(--mono)}.dev em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--g2)}.dev.down{opacity:.55}
+.mn-list .pb{overflow:auto}.sweepbar{height:3px;background:var(--line)}.sweepbar i{display:block;height:100%;width:0;background:var(--b);transition:width .3s}
+.dd-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.dd-head b{color:var(--wh);letter-spacing:.08em}.tag{font-size:9px;letter-spacing:.14em;padding:1px 7px;border:1px solid}.tag.ok{color:var(--g);border-color:var(--g3)}.tag.off{color:var(--tx3);border-color:var(--line2)}.tag.warn{color:var(--a);border-color:var(--a2)}.tag.err{color:var(--r);border-color:var(--r2)}
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.pingout{margin:8px 0 0;font-size:10.5px;color:var(--b);white-space:pre-wrap}
+.mp-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:8px;height:calc(100vh - 48px - 24px - 24px)}.mp-main .pb{min-height:0}.mp-side .pb{overflow:auto}
+.lg-key{margin-left:12px;display:inline-flex;align-items:center;gap:5px}.lg-key i{width:7px;height:7px;border-radius:50%}.k-on{background:var(--g)}.k-warn{background:var(--a)}.k-off{background:#4a5454}.k-iso{background:var(--r)}
+/* security */
+.sc-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:auto 300px 240px;gap:8px}
+.sc-threat{grid-column:1/4;grid-row:1/3}.sc-fw{grid-column:4/13;grid-row:1}.sc-alerts{grid-column:4/8;grid-row:2}.sc-logs{grid-column:8/13;grid-row:2}.sc-perf{grid-column:1/7;grid-row:3}.sc-ev{grid-column:7/13;grid-row:3}
+.threat-big{font-family:var(--mono);font-size:30px;letter-spacing:.1em;margin-bottom:6px;color:var(--g)}.threat-big.a{color:var(--a)}.threat-big.r{color:var(--r)}
+.fw-top{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}.fw-top>div{padding:8px 12px;border-right:1px solid var(--line)}.fw-top span{display:block;font-size:9px;letter-spacing:.14em;color:var(--tx3)}.fw-top b{font-family:var(--mono);font-size:15px;font-weight:500;color:var(--g)}
+.chips{display:flex;gap:4px;overflow:visible}.chipb{background:none;border:1px solid var(--line2);color:var(--tx3);font-size:9.5px;padding:1px 7px;letter-spacing:.08em;font-family:var(--mono)}.chipb.on{color:var(--g);border-color:var(--g2);background:var(--g3)}
+/* missions / settings */
+.rank-panel{margin-bottom:8px}.ladder{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.rk{border-top:2px solid var(--line2);padding-top:8px;position:relative}.rk i{position:absolute;top:-6px;left:0;width:10px;height:10px;background:var(--bg2);border:2px solid var(--line2)}.rk b{display:block;font-size:12px;color:var(--tx3);font-weight:600}.rk span{font-family:var(--mono);font-size:10.5px;color:var(--tx3)}
+.rk.past{border-color:var(--g3)}.rk.past i{background:var(--g3);border-color:var(--g3)}.rk.past b{color:var(--tx2)}.rk.cur{border-color:var(--g)}.rk.cur i{background:var(--g);border-color:var(--g);box-shadow:0 0 8px var(--gg)}.rk.cur b{color:var(--g)}
+.mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px}.mcard{background:var(--bg2);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:6px;position:relative;border-radius:3px}.mcard.active{border-color:var(--g2)}.mcard.done{border-color:var(--g3);background:linear-gradient(180deg,rgba(75,216,139,.05),var(--bg2))}
+.mc-top{display:flex;align-items:center;gap:10px}.mc-id{font-family:var(--mono);color:var(--tx3);font-size:11px}.mc-xp{margin-left:auto;font-family:var(--mono);color:var(--g);font-size:11px}.mcard h3{margin:0;font-size:14px;color:var(--wh);letter-spacing:.04em}.mcard p{margin:0;color:var(--tx2);font-size:12px}.mcard .btn{align-self:flex-start;margin-top:6px}.mc-badge{color:var(--g);font-size:11px;letter-spacing:.14em;margin-top:6px;font-weight:700}
+.set-panel{max-width:820px;margin-bottom:8px}.srow{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}.srow:last-child{border:0}.srow b{display:block;color:var(--wh);font-weight:600}.srow span{color:var(--tx3);font-size:11.5px}
+.seg{display:flex}.seg button{background:var(--bg3);border:1px solid var(--line2);padding:5px 12px;font-size:10.5px;letter-spacing:.08em;color:var(--tx3)}.seg button.on{background:var(--g3);color:var(--wh);border-color:var(--g2)}
+.about p{margin:0 0 10px;color:var(--tx2)}
+/* overlays */
+#fxLayer{position:absolute;inset:0;pointer-events:none;z-index:80}.fx{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .3s}.fx.in{opacity:1}.fx.out{opacity:0}.fx.dim{background:rgba(3,5,5,.82);backdrop-filter:blur(2px)}.fx.modal{background:rgba(3,5,5,.78);pointer-events:auto}
+.fx-access{text-align:center;font-family:var(--mono)}.fx-kicker{font-size:11px;letter-spacing:.4em;color:var(--tx3);margin-bottom:10px}.fx-big{font-size:clamp(24px,5vw,46px);letter-spacing:.2em;color:var(--g);text-shadow:0 0 22px var(--gg);font-weight:700;position:relative}.fx-sub{margin-top:12px;color:var(--tx2);font-size:12px;letter-spacing:.1em}.fx-line{height:1px;width:260px;margin:18px auto 0;background:linear-gradient(90deg,transparent,var(--g),transparent);animation:sweep 1.2s ease-out}
+@keyframes sweep{from{width:0}to{width:260px}}
+.glitch-t{animation:glitch 1.2s steps(2) 1}
+.fx-check{width:64px;height:64px;margin:6px auto 14px;display:block}.fx-check circle{fill:none;stroke:var(--g);stroke-width:1.5;stroke-dasharray:150;stroke-dashoffset:150;animation:dash .7s .1s forwards}.fx-check path{fill:none;stroke:var(--g);stroke-width:2.5;stroke-dasharray:50;stroke-dashoffset:50;animation:dash .5s .6s forwards}@keyframes dash{to{stroke-dashoffset:0}}
+.dialog{background:var(--bg2);border:1px solid var(--line2);border-top:2px solid var(--r);padding:20px 22px;width:min(420px,90vw)}.dialog h3{margin:0 0 8px;color:var(--wh);letter-spacing:.1em;font-size:14px}.dialog p{margin:0 0 16px;color:var(--tx2)}.dlg-act{display:flex;justify-content:flex-end;gap:8px}
+.conn-box{width:min(520px,92vw);border-top-color:var(--ac);font-family:var(--mono)}.conn-box h3{font-size:18px;letter-spacing:.2em}.conn-ip{color:var(--tx3);font-size:11px;margin-bottom:12px}.conn-steps{min-height:130px;font-size:11.5px;color:var(--tx2);display:flex;flex-direction:column;gap:3px}.conn-box .bar i{background:var(--ac)}.conn-pct{text-align:right;font-size:10.5px;color:var(--tx3);margin-top:4px}
+.conn-steps em{font-style:normal;color:var(--tx3)}
+#toasts{position:absolute;right:14px;bottom:36px;display:flex;flex-direction:column;gap:6px;z-index:90;pointer-events:none}
+.toast{background:var(--bg2);border:1px solid var(--line2);border-left:3px solid var(--g);padding:8px 12px;min-width:220px;max-width:340px;animation:toastin .3s;display:flex;flex-direction:column;gap:2px;font-size:12px}.toast b{color:var(--wh);font-size:11.5px;letter-spacing:.04em}.toast span{color:var(--tx2);font-size:11.5px}.toast.err{border-left-color:var(--r)}.toast.warn{border-left-color:var(--a)}.toast.out{opacity:0;transform:translateX(20px);transition:.4s}
+@keyframes toastin{from{opacity:0;transform:translateX(20px)}}
+.scan{position:absolute;inset:0;pointer-events:none;z-index:95;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px);opacity:.35}body.no-scan .scan{display:none}
+.scan::after{content:"";position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(75,216,139,.035),transparent);animation:scanmove 7s linear infinite}@keyframes scanmove{to{top:100%}}
+/* responsive */
+@media(max-width:1280px){.strip{grid-template-columns:repeat(3,1fr)}.dgrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}.d-term,.d-net,.d-sec,.d-obj,.d-log,.d-stream{grid-column:auto;grid-row:auto}.d-term{grid-column:1/3;height:420px}.d-net,.d-sec,.d-obj,.d-log,.d-stream{height:260px}.d-stream{grid-column:1/3;height:200px}
+ .mn-grid{grid-template-columns:260px minmax(0,1fr);grid-template-rows:480px 360px 250px}.mn-list{grid-column:1;grid-row:1}.mn-topo{grid-column:2;grid-row:1}.mn-detail{grid-column:1;grid-row:2}.mn-fw{grid-column:2;grid-row:2}.mn-ev{grid-column:1;grid-row:3}.mn-tr{grid-column:2;grid-row:3}
+ .sc-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}.sc-threat,.sc-fw,.sc-alerts,.sc-logs,.sc-perf,.sc-ev{grid-column:auto;grid-row:auto}.sc-fw{grid-column:1/3}.sc-alerts,.sc-logs,.sc-perf,.sc-ev{height:280px}
+ .tbody{grid-template-columns:1fr}.ladder{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){#app{grid-template-columns:52px minmax(0,1fr)}#nav button span,#nav button kbd,.nav-foot,.bsub,.tb-mid{display:none}#nav button{padding:12px 17px}.brand{min-width:0}.chip.rank-chip{display:none}
+ .mn-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}.mn-list,.mn-topo,.mn-detail,.mn-fw,.mn-ev,.mn-tr{grid-column:1;grid-row:auto}.mn-list{height:360px}.mn-topo{height:420px}.mn-ev,.mn-tr{height:240px}
+ .mp-grid{grid-template-columns:1fr;height:auto}.mp-main{height:480px}.tgrid{grid-template-columns:1fr}.span2,.span3{grid-column:auto}.filebox{grid-template-columns:1fr}.strip{grid-template-columns:repeat(2,1fr)}.dgrid{grid-template-columns:1fr}.d-term,.d-stream{grid-column:auto}.sc-grid{grid-template-columns:1fr}.sc-fw{grid-column:auto}.fw-top{grid-template-columns:repeat(2,1fr)}.ind-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#topbar{gap:8px;padding:0 8px}.chip#chipTarget{display:none}.lg{grid-template-columns:54px 40px 1fr}.lg .ls{display:none}.ladder{grid-template-columns:repeat(2,1fr)}.srow{flex-wrap:wrap}input[type=range]{width:140px}}
+</style>
+</head>
+<body>
+<div id="root">
+
+<!-- ============ BOOT ============ -->
+<div id="boot">
+  <div class="boot-inner">
+    <pre class="boot-logo" id="bootLogo" aria-hidden="true"></pre>
+    <div class="boot-log" id="bootLog"></div>
+    <div class="boot-bar"><i id="bootBar"></i></div>
+    <div class="boot-foot">
+      <span id="bootStatus">INITIALISING</span>
+      <button id="bootEnter" class="btn pri" hidden>ENTER NEBULA&nbsp;&#9656;</button>
+    </div>
+    <div class="boot-note">SIMULATION ENVIRONMENT &middot; No real systems, networks or devices are ever accessed. Press any key to skip the boot sequence.</div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <header id="topbar">
+    <div class="brand">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 7v14l-12 7L4 23V9z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 22V10l12 12V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg>
+      <div><div class="bname" id="logo" data-text="NEBULA">NEBULA</div><div class="bsub">TACTICAL OPERATIONS PLATFORM &middot; v4.2</div></div>
+    </div>
+    <div class="tb-mid">
+      <div class="tb-item"><span class="lbl">SESSION</span><span class="val" id="tbSession">NB-0000</span></div>
+      <div class="tb-item"><span class="lbl">LOCAL TIME</span><span class="val" id="tbClock">--:--:--</span></div>
+      <div class="tb-item"><span class="lbl">OPERATOR</span><span class="val">GHOST-7</span></div>
+    </div>
+    <div class="tb-right">
+      <div class="chip" id="chipTarget"><span class="lbl">TARGET</span><span class="val" id="tbTarget">NONE</span></div>
+      <div class="chip" id="chipLink"><i class="dot"></i><span id="tbLink">IDLE</span></div>
+      <div class="chip rank-chip"><span class="lbl">RANK</span><span class="val" id="tbRank">Trainee</span></div>
+      <button class="ibtn" id="btnSound" title="Sound effects on/off" aria-label="Toggle sound effects"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="sndWaves" d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg></button>
+      <button class="ibtn" id="btnFull" title="Full-screen" aria-label="Toggle full-screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </header>
+
+  <nav id="nav" aria-label="Main">
+    <button data-view="dashboard" class="on"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></svg><span>Dashboard</span><kbd>1</kbd></button>
+    <button data-view="terminal"><svg viewBox="0 0 24 24"><path d="M3 4h18v16H3z"/><path d="M7 9l3 3-3 3M12 15h5"/></svg><span>Terminal</span><kbd>2</kbd></button>
+    <button data-view="targets"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>Targets</span><kbd>3</kbd></button>
+    <button data-view="mynet"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/><path d="M8.5 15a5 5 0 017 0M10.5 17.5a2 2 0 013 0"/></svg><span>My Network</span><kbd>4</kbd></button>
+    <button data-view="map"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 7l8 1M7 8l4 8M17 10l-4 6"/></svg><span>Network Map</span><kbd>5</kbd></button>
+    <button data-view="security"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Security</span><kbd>6</kbd></button>
+    <button data-view="missions"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 4h12l-2 4 2 4H5"/></svg><span>Missions</span><kbd>7</kbd></button>
+    <button data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><span>Settings</span><kbd>8</kbd></button>
+    <div class="nav-foot"><span class="dot ok"></span> SIMULATION<br>MODE ACTIVE</div>
+  </nav>
+
+  <main id="main">
+
+    <!-- DASHBOARD -->
+    <section class="view on" id="view-dashboard">
+      <div class="strip">
+        <div class="stat"><div class="lbl">SYSTEM STATUS</div><div class="sv ok" id="stSys">OPERATIONAL</div><div class="ss" id="stSysSub">CPU 0% &middot; MEM 0%</div><div class="mini"><i id="stCpuBar"></i></div></div>
+        <div class="stat"><div class="lbl">CURRENT SESSION</div><div class="sv" id="stSess">NB-0000</div><div class="ss" id="stSessSub">uptime 00:00:00</div></div>
+        <div class="stat"><div class="lbl">CONNECTION</div><div class="sv" id="stLink">IDLE</div><div class="ss" id="stLinkSub">no active channel</div></div>
+        <div class="stat"><div class="lbl">SELECTED TARGET</div><div class="sv" id="stTgt">NONE</div><div class="ss" id="stTgtSub">run: targets</div></div>
+        <div class="stat"><div class="lbl">THREAT LEVEL</div><div class="sv" id="stThreat">LOW</div><div class="ss" id="stThreatSub">0 open alerts</div><div class="segs" id="stThreatSegs"></div></div>
+        <div class="stat"><div class="lbl">RANK &middot; XP</div><div class="sv" id="stRank">Trainee</div><div class="ss" id="stXp">0 / 250 XP</div><div class="mini"><i id="stXpBar"></i></div></div>
+      </div>
+      <div class="dgrid">
+        <div class="d-term" id="slotDashTerm"></div>
+        <section class="panel d-net">
+          <div class="ph"><span class="pt">NETWORK ACTIVITY</span><span class="pm"><b class="c-g">&#9632;</b> RX <span id="nRx">0</span> Mb/s &nbsp; <b class="c-a">&#9632;</b> TX <span id="nTx">0</span> Mb/s</span></div>
+          <div class="pb nopad"><canvas id="netCv" class="cv"></canvas></div>
+          <div class="pfoot"><span>PKT/S <b id="nPkt">0</b></span><span>SESSIONS <b id="nSess">0</b></span><span>LATENCY <b id="nLat">0</b> ms</span><span>LOSS <b id="nLoss">0.0</b>%</span></div>
+        </section>
+        <section class="panel d-sec">
+          <div class="ph"><span class="pt">SECURITY MONITORING</span><span class="pm"><span class="pulse"></span> LIVE</span></div>
+          <div class="pb">
+            <div class="ind-row" id="dashInd"></div>
+            <div class="sub-h">ACTIVE ALERTS</div>
+            <div id="dashAlerts" class="alerts"></div>
+          </div>
+        </section>
+        <section class="panel d-obj">
+          <div class="ph"><span class="pt">MISSION OBJECTIVES</span><button class="lnk" data-go="missions">ALL MISSIONS &rsaquo;</button></div>
+          <div class="pb" id="dashMission"></div>
+        </section>
+        <section class="panel d-log">
+          <div class="ph"><span class="pt">EVENT LOG</span><span class="pm">SYSTEM &middot; NETWORK &middot; IDS</span></div>
+          <div class="pb nopad scroll"><div id="dashLog" class="logs"></div></div>
+        </section>
+        <section class="panel d-stream">
+          <div class="ph"><span class="pt">LIVE DATA STREAM</span><span class="pm">nebula0 &middot; raw</span></div>
+          <div class="pb nopad"><pre id="stream" class="stream"></pre></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- TERMINAL -->
+    <section class="view" id="view-terminal"><div id="slotFullTerm"></div></section>
+
+    <!-- TARGETS -->
+    <section class="view" id="view-targets">
+      <div class="view-head"><h2>FICTIONAL TARGET SYSTEMS</h2><p>Four fictional systems, each with its own interface, security level and objectives. Every address uses reserved documentation ranges and <code>.invalid</code> domains &mdash; nothing here exists on the internet.</p></div>
+      <div class="tcards" id="tgCards"></div>
+    </section>
+    <section class="view" id="view-target"><div id="tgStage"></div></section>
+
+    <!-- MY NETWORK -->
+    <section class="view" id="view-mynet">
+      <div class="sim-banner"><b>MY NETWORK &ndash; SIMULATED</b><span>Every device, address and traffic figure on this screen is fictional and generated locally. NEBULA never reads, scans or contacts your real network, router, Wi-Fi or devices.</span></div>
+      <div class="mn-grid">
+        <section class="panel mn-list">
+          <div class="ph"><span class="pt">DEVICES</span><span class="pm" id="mnCount">0/0 ONLINE</span></div>
+          <div class="pb nopad"><div id="mnDevs" class="devlist"></div></div>
+          <div class="pfoot col"><button class="btn pri" id="mnSweep">RUN SIMULATED SWEEP</button><div class="sweepbar" id="mnSweepBar"><i></i></div></div>
+        </section>
+        <section class="panel mn-topo">
+          <div class="ph"><span class="pt">HOME NETWORK TOPOLOGY</span><span class="pm">192.168.1.0/24 &middot; <span class="c-a">SIMULATED</span></span></div>
+          <div class="pb nopad"><canvas id="mnCv" class="cv"></canvas></div>
+        </section>
+        <section class="panel mn-detail">
+          <div class="ph"><span class="pt">DEVICE DETAILS</span></div>
+          <div class="pb" id="mnDetail"></div>
+        </section>
+        <section class="panel mn-fw">
+          <div class="ph"><span class="pt">FIREWALL (SIMULATED)</span><span class="pm" id="mnFwState">ACTIVE</span></div>
+          <div class="pb" id="mnFw"></div>
+        </section>
+        <section class="panel mn-ev">
+          <div class="ph"><span class="pt">SECURITY EVENT HISTORY</span></div>
+          <div class="pb nopad scroll"><div id="mnEv" class="logs"></div></div>
+        </section>
+        <section class="panel mn-tr">
+          <div class="ph"><span class="pt">HOME TRAFFIC</span><span class="pm"><b class="c-g">&#9632;</b> DOWN <span id="mnDown">0</span> &nbsp; <b class="c-a">&#9632;</b> UP <span id="mnUp">0</span> Mb/s</span></div>
+          <div class="pb nopad"><canvas id="mnTrCv" class="cv"></canvas></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- NETWORK MAP -->
+    <section class="view" id="view-map">
+      <div class="mp-grid">
+        <section class="panel mp-main">
+          <div class="ph"><span class="pt">NETWORK MAP &middot; SEGMENT NB-LAB</span><span class="pm"><span class="lg-key"><i class="k-on"></i>ONLINE</span><span class="lg-key"><i class="k-warn"></i>DEGRADED</span><span class="lg-key"><i class="k-off"></i>OFFLINE</span><span class="lg-key"><i class="k-iso"></i>ISOLATED</span></span></div>
+          <div class="pb nopad"><canvas id="mpCv" class="cv"></canvas></div>
+          <div class="pfoot"><span>NODES ONLINE <b id="mpOn">0</b></span><span>AVG LATENCY <b id="mpLat">0</b> ms</span><span>PACKETS/S <b id="mpPps">0</b></span><span class="dim">Click a node &middot; drag to rearrange</span></div>
+        </section>
+        <section class="panel mp-side">
+          <div class="ph"><span class="pt">NODE INSPECTOR</span></div>
+          <div class="pb" id="mpDetail"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- SECURITY -->
+    <section class="view" id="view-security">
+      <div class="sc-grid">
+        <section class="panel sc-threat">
+          <div class="ph"><span class="pt">THREAT LEVEL</span><span class="pm"><span class="pulse"></span> LIVE</span></div>
+          <div class="pb"><div class="threat-big" id="scThreat">LOW</div><div class="segs big" id="scSegs"></div><div class="kvs" id="scCounts"></div><div class="sub-h">MONITORING SYSTEMS</div><div class="ind-row col" id="scInd"></div></div>
+        </section>
+        <section class="panel sc-fw">
+          <div class="ph"><span class="pt">FIREWALL DASHBOARD</span><span class="pm" id="fwSum">ENFORCING</span></div>
+          <div class="pb nopad"><div class="fw-top"><div><span>ALLOWED/S</span><b id="fwA">0</b></div><div><span>BLOCKED/S</span><b id="fwB" class="c-r">0</b></div><div><span>ACTIVE RULES</span><b id="fwN">0</b></div><div><span>POLICY</span><b>DEFAULT-DENY</b></div></div><div class="tscroll"><table class="tbl" id="fwTbl"></table></div></div>
+        </section>
+        <section class="panel sc-alerts">
+          <div class="ph"><span class="pt">INTRUSION ALERTS</span><span class="pm" id="scAlertN">0 OPEN</span></div>
+          <div class="pb nopad scroll"><div id="secAlerts" class="alerts wide"></div></div>
+        </section>
+        <section class="panel sc-logs">
+          <div class="ph"><span class="pt">SYSTEM LOGS</span><span class="pm chips" id="logChips"><button class="chipb on" data-f="ALL">ALL</button><button class="chipb" data-f="INFO">INFO</button><button class="chipb" data-f="WARN">WARN</button><button class="chipb" data-f="ERROR">ERROR</button></span></div>
+          <div class="pb nopad scroll"><div id="secLog" class="logs"></div></div>
+        </section>
+        <section class="panel sc-perf">
+          <div class="ph"><span class="pt">SYSTEM PERFORMANCE</span><span class="pm"><b class="c-g">&#9632;</b> CPU <span id="pfCpu">0</span>% &nbsp; <b class="c-a">&#9632;</b> MEM <span id="pfMem">0</span>%</span></div>
+          <div class="pb nopad"><canvas id="perfCv" class="cv"></canvas></div>
+        </section>
+        <section class="panel sc-ev">
+          <div class="ph"><span class="pt">SECURITY EVENTS &middot; LAST 24H</span><span class="pm">events / hour</span></div>
+          <div class="pb nopad"><canvas id="evCv" class="cv"></canvas></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- MISSIONS -->
+    <section class="view" id="view-missions">
+      <section class="panel rank-panel">
+        <div class="ph"><span class="pt">OPERATOR PROGRESSION</span><span class="pm" id="rkSummary"></span></div>
+        <div class="pb"><div class="ladder" id="rkLadder"></div><div class="bar big"><i id="rkBar"></i></div></div>
+      </section>
+      <div class="mcards" id="mCards"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+      <section class="panel set-panel">
+        <div class="ph"><span class="pt">SETTINGS</span></div>
+        <div class="pb">
+          <div class="srow"><div><b>Dark theme</b><span>Choose the dark surface tone.</span></div><div class="seg" id="setTheme"><button data-v="matte">MATTE BLACK</button><button data-v="charcoal">CHARCOAL</button></div></div>
+          <div class="srow"><div><b>Sound effects</b><span>Subtle synthesised tones for keys, alerts and access events.</span></div><button class="sw" id="setSound" role="switch" aria-label="Sound effects"><i></i></button></div>
+          <div class="srow"><div><b>Animations</b><span>Glitch effects, packet flow, scanning and transitions.</span></div><button class="sw" id="setAnim" role="switch" aria-label="Animations"><i></i></button></div>
+          <div class="srow"><div><b>Scanline overlay</b><span>Subtle CRT-style scanlines across the interface.</span></div><button class="sw" id="setScan" role="switch" aria-label="Scanlines"><i></i></button></div>
+          <div class="srow"><div><b>Terminal text speed</b><span id="speedLbl">Normal</span></div><input type="range" id="setSpeed" min="1" max="5" step="1" aria-label="Terminal text speed"></div>
+          <div class="srow"><div><b>Interface brightness</b><span id="brLbl">100%</span></div><input type="range" id="setBright" min="60" max="130" step="5" aria-label="Interface brightness"></div>
+          <div class="srow"><div><b>Full-screen mode</b><span>Fill the whole display. Press Esc to leave.</span></div><button class="btn" id="setFull">TOGGLE FULL-SCREEN</button></div>
+          <div class="srow"><div><b>Reset progress</b><span>Erase XP, rank, objectives and completed missions saved in this browser.</span></div><button class="btn danger" id="setReset">RESET PROGRESS</button></div>
+        </div>
+      </section>
+      <section class="panel set-panel">
+        <div class="ph"><span class="pt">ABOUT &amp; SAFETY</span></div>
+        <div class="pb about">
+          <p><b>NEBULA is a fictional entertainment simulator.</b> Nothing in it touches real systems. All targets, devices, addresses, alerts, logs and traffic are generated locally in your browser and use reserved documentation address ranges and <code>.invalid</code> domains.</p>
+          <p>It never scans networks, reads your Wi-Fi or router, captures passwords, intercepts traffic, performs real decryption, contacts external servers, installs software or changes system settings. The only data stored is your progress and preferences, kept in this browser's local storage.</p>
+          <p class="dim">Shortcuts: <kbd>Alt</kbd>+<kbd>1&hellip;8</kbd> switch views &middot; <kbd>&uarr;</kbd><kbd>&darr;</kbd> command history &middot; <kbd>Tab</kbd> complete &middot; <kbd>Ctrl</kbd>+<kbd>C</kbd> abort &middot; <kbd>Ctrl</kbd>+<kbd>L</kbd> clear</p>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <footer id="statusbar"><span><i class="dot ok"></i> SIMULATION &mdash; all activity is fictional and local</span><span class="sb-mid" id="sbMsg">Ready</span><span>NEBULA 4.2.0 &middot; <span id="sbFps">&ndash;</span></span></footer>
+
+  <!-- shared terminal panel (moved between dashboard and terminal view) -->
+  <section class="panel term-panel" id="termPanel">
+    <div class="ph"><span class="pt">TERMINAL</span><span class="pm" id="termTitle">ghost@nebula: ~</span>
+      <span class="pa"><button class="btn sm" id="typerBtn" title="Hacker-typer mode: press any key to stream code">TYPER MODE</button><button class="btn sm" id="termClear">CLEAR</button></span></div>
+    <div id="termBody">
+      <div id="termOut"></div>
+      <div id="promptWrap">
+        <div class="ps-top" id="psTop"></div>
+        <div class="ps-line"><span id="psSym"></span><span id="cmdView"></span><input id="cmdin" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal command input"></div>
+      </div>
+      <div id="typerHud" hidden>TYPER MODE ACTIVE &mdash; press any key to stream code &middot; <b>ESC</b> to exit <span id="typerCount"></span></div>
+    </div>
+  </section>
+</div>
+
+<div id="fxLayer"></div>
+<div id="toasts" aria-live="polite"></div>
+<div class="scan"></div>
+</div>
+<script>
+(()=>{'use strict';
+/* ================= UTIL ================= */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd=(a,b)=>Math.random()*(b-a)+a;
+const ri=(a,b)=>Math.floor(rnd(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+const clock=(d=new Date())=>`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const hexs=n=>Array.from({length:n},()=>ri(0,255).toString(16).padStart(2,'0')).join(' ');
+const COL={g:'#4bd88b',r:'#d9534f',a:'#dba43e',b:'#6fa9bd',line:'#1f2829',tx3:'#667272',tx2:'#9aa6a6',bg:'#0f1314',bg3:'#151a1b'};
+const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`};
+const SESSION='NB-'+ri(1000,9999)+'-'+pick('ABCDEFGHJKLMNPQRSTUVWXYZ'.split(''));
+const T0=Date.now();
+
+/* ================= STATE ================= */
+const KEY='nebula.save.v1';
+const DEF={xp:0,obj:{},done:{},active:'m1',settings:{sound:true,anim:true,speed:3,bright:100,theme:'matte',scan:true},hist:[],typerGrants:0};
+function loadState(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object')return{...DEF,...r,settings:{...DEF.settings,...(r.settings||{})},obj:r.obj||{},done:r.done||{},hist:Array.isArray(r.hist)?r.hist:[]}}catch(e){}return JSON.parse(JSON.stringify(DEF))}
+let S=loadState();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let connected=null,sel=null,cmdTarget=null,view='dashboard';
+
+/* ================= SOUND ================= */
+const Snd=(()=>{let ctx=null,master=null;
+ function init(){if(ctx)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ctx=new AC();master=ctx.createGain();master.gain.value=.6;master.connect(ctx.destination)}catch(e){ctx=null}}
+ function tone(f,d=.08,type='sine',v=.05,delay=0,slide=0){if(!ctx||!S.settings.sound)return;try{if(ctx.state==='suspended')ctx.resume();const t=ctx.currentTime+delay,o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03)}catch(e){}}
+ return{init,
+  key(){tone(rnd(1400,2300),.025,'square',.01)},
+  click(){tone(900,.04,'triangle',.025)},
+  ok(){tone(520,.09,'sine',.045);tone(780,.12,'sine',.045,.09)},
+  err(){tone(170,.2,'sawtooth',.035)},
+  alert(){tone(740,.1,'square',.025);tone(740,.1,'square',.025,.18)},
+  connect(){tone(220,.7,'sawtooth',.02,0,500)},
+  grant(){[392,523,659,784].forEach((f,i)=>tone(f,.16,'sine',.045,i*.1))},
+  complete(){[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.05,i*.12))}
+ }})();
+
+/* ================= SETTINGS APPLY ================= */
+function applySettings(){const s=S.settings,b=document.body;
+ b.classList.toggle('no-anim',!s.anim);b.classList.toggle('theme-charcoal',s.theme==='charcoal');b.classList.toggle('no-scan',!s.scan);
+ $('#root').style.filter=s.bright===100?'':`brightness(${s.bright/100})`;
+ $('#btnSound').classList.toggle('off',!s.sound);$('#sndWaves').style.display=s.sound?'':'none';
+ $('#setSound').classList.toggle('on',s.sound);$('#setSound').setAttribute('aria-checked',s.sound);
+ $('#setAnim').classList.toggle('on',s.anim);$('#setAnim').setAttribute('aria-checked',s.anim);
+ $('#setScan').classList.toggle('on',s.scan);$('#setScan').setAttribute('aria-checked',s.scan);
+ $('#setSpeed').value=s.speed;$('#setBright').value=s.bright;
+ $('#speedLbl').textContent=['Very slow','Slow','Normal','Fast','Instant-ish'][s.speed-1];$('#brLbl').textContent=s.bright+'%';
+ $$('#setTheme button').forEach(x=>x.classList.toggle('on',x.dataset.v===s.theme));}
+
+/* ================= UI HELPERS ================= */
+function toast(title,msg,kind='ok'){const box=$('#toasts');while(box.children.length>3)box.firstChild.remove();const d=document.createElement('div');d.className='toast '+kind;d.innerHTML=`<b>${esc(title)}</b>${msg?`<span>${esc(msg)}</span>`:''}`;box.appendChild(d);setTimeout(()=>d.classList.add('out'),3800);setTimeout(()=>d.remove(),4300)}
+let fxChain=Promise.resolve();
+function fx(html,ms,cls=''){fxChain=fxChain.then(async()=>{const o=document.createElement('div');o.className='fx '+cls;o.innerHTML=html;$('#fxLayer').appendChild(o);requestAnimationFrame(()=>o.classList.add('in'));await sleep(ms);o.classList.remove('in');o.classList.add('out');await sleep(350);o.remove()}).catch(()=>{});return fxChain}
+function fxAccess(title,sub){Snd.grant();return fx(`<div class="fx-access"><div class="fx-big glitch-t" data-text="${esc(title)}">${esc(title)}</div><div class="fx-sub">${esc(sub||'')}</div><div class="fx-line"></div></div>`,1500,'dim')}
+function confirmBox(title,msg,okLabel){return new Promise(res=>{const o=document.createElement('div');o.className='fx in modal';o.innerHTML=`<div class="dialog"><h3>${esc(title)}</h3><p>${esc(msg)}</p><div class="dlg-act"><button class="btn" data-r="0">CANCEL</button><button class="btn danger" data-r="1">${esc(okLabel)}</button></div></div>`;o.addEventListener('click',e=>{const b=e.target.closest('button');if(b){o.remove();res(b.dataset.r==='1')}});$('#fxLayer').appendChild(o)})}
+function glitch(){if(!S.settings.anim)return;const l=$('#logo');l.classList.remove('glitch');void l.offsetWidth;l.classList.add('glitch');setTimeout(()=>l.classList.remove('glitch'),800)}
+function fakeIp(base){return `${base||'10.77.0'}.${ri(2,250)}`}
+
+/* ================= RANK / XP ================= */
+const RANKS=[{n:'Trainee',x:0},{n:'Junior Analyst',x:250},{n:'Security Analyst',x:600},{n:'Senior Analyst',x:1100},{n:'Elite Operator',x:1800},{n:'NEBULA Legend',x:2600}];
+function rankInfo(xp=S.xp){let i=0;RANKS.forEach((r,k)=>{if(xp>=r.x)i=k});const cur=RANKS[i],nx=RANKS[i+1];return{i,cur,nx,pct:nx?(xp-cur.x)/(nx.x-cur.x):1}}
+function addXp(n,why){const b=rankInfo().i;S.xp+=n;save();const a=rankInfo();renderRank();logEvent('INFO',`+${n} XP — ${why}`,'PROGRESS');
+ if(a.i>b){Snd.complete();fx(`<div class="fx-access"><div class="fx-kicker">PROMOTION</div><div class="fx-big">${esc(a.cur.n.toUpperCase())}</div><div class="fx-sub">Clearance upgraded &middot; ${fmt(S.xp)} XP</div><div class="fx-line"></div></div>`,2400,'dim')}}
+const fmt=n=>Number(n).toLocaleString('en-US');
+function renderRank(){const r=rankInfo();$('#tbRank').textContent=r.cur.n;$('#stRank').textContent=r.cur.n;
+ $('#stXp').textContent=r.nx?`${fmt(S.xp)} / ${fmt(r.nx.x)} XP`:`${fmt(S.xp)} XP · MAX RANK`;$('#stXpBar').style.width=(r.pct*100)+'%';
+ $('#rkBar').style.width=(r.pct*100)+'%';$('#rkSummary').textContent=`${r.cur.n.toUpperCase()} · ${fmt(S.xp)} XP${r.nx?' · '+fmt(r.nx.x-S.xp)+' TO '+r.nx.n.toUpperCase():''}`;
+ $('#rkLadder').innerHTML=RANKS.map((k,i)=>`<div class="rk ${i<r.i?'past':''} ${i===r.i?'cur':''}"><i></i><b>${k.n}</b><span>${fmt(k.x)} XP</span></div>`).join('')}
+
+/* ================= LOGS & ALERTS ================= */
+const LOGS=[];let logFilter='ALL';
+function logRow(e){return `<div class="lg ${e.level}"><span class="lt">${clock(e.t)}</span><span class="ll">${e.level}</span><span class="ls">${esc(e.src)}</span><span class="lm">${esc(e.msg)}</span></div>`}
+function logEvent(level,msg,src='SYSTEM'){const e={t:new Date(),level,msg,src};LOGS.push(e);if(LOGS.length>300)LOGS.shift();
+ const dl=$('#dashLog');dl.insertAdjacentHTML('afterbegin',logRow(e));while(dl.children.length>60)dl.lastChild.remove();
+ if(logFilter==='ALL'||logFilter===level){const sl=$('#secLog');sl.insertAdjacentHTML('afterbegin',logRow(e));while(sl.children.length>120)sl.lastChild.remove()}}
+function renderSecLog(){$('#secLog').innerHTML=LOGS.filter(e=>logFilter==='ALL'||e.level===logFilter).slice(-120).reverse().map(logRow).join('')}
+const BGLOG=[['INFO','Heartbeat acknowledged by node SRV-{n}','MONITOR'],['INFO','TLS session resumed for {ip}','GATEWAY'],['INFO','Config sync complete ({n} objects)','CONFIG'],['INFO','Scheduled integrity check passed','FIM'],['INFO','DHCP lease renewed for {ip}','DHCP'],['INFO','Certificate rotation queued for edge-{n}','PKI'],['WARN','Elevated latency to relay hop {ip} ({n}0 ms)','NETMON'],['WARN','Failed login burst from {ip} (x{n})','AUTH'],['WARN','Disk usage 8{n}% on backup volume','HEALTH'],['ERROR','Packet checksum failure on port {n}','DPI'],['INFO','Threat feed updated: {n}2 new indicators','INTEL'],['WARN','Outbound DNS query to unlisted resolver {ip}','DNS']];
+function bgLog(){const t=pick(BGLOG);const m=t[1].replace(/\{ip\}/g,()=>fakeIp(pick(['10.77.0','10.20.4','203.0.113','198.51.100']))).replace(/\{n\}/g,()=>ri(1,9));logEvent(t[0],m,t[2])}
+const SEV={CRITICAL:40,HIGH:20,MEDIUM:8,LOW:2};
+const ALERTS=[];let alertSeq=7731;
+const ALERT_T={CRITICAL:['Anomalous beaconing from 10.77.0.41 to 203.0.113.66','Privilege escalation attempt on ops-db.lab','Ransomware-like file entropy spike on vault-sim-01'],HIGH:['Repeated authentication failures against admin console','Unsigned binary executed on dev-ws-041','Suspicious lateral movement between VLAN 20 and 40'],MEDIUM:['Port sweep detected from 198.51.100.77','Outbound traffic volume 3x baseline','Expired certificate presented by internal service'],LOW:['New device joined guest network','DNS request to newly registered domain','Policy deviation: USB mass storage mounted']};
+function addAlert(sev,title,src,silent){const a={id:'ALRT-'+(alertSeq++),sev,title,src:src||pick(['IDS','EDR','SIEM','DPI']),t:new Date(),acked:false};ALERTS.unshift(a);logEvent(sev==='CRITICAL'||sev==='HIGH'?'ERROR':'WARN',`${a.id} ${title}`,a.src);renderAlerts();if(!silent){Snd.alert();if(sev==='CRITICAL'||sev==='HIGH')glitch();toast('Security alert '+a.id,title,'err')}return a}
+function ackAlert(id){const a=ALERTS.find(x=>x.id===id);if(!a||a.acked)return false;a.acked=true;logEvent('INFO',`${a.id} acknowledged by GHOST-7`,'SOC');renderAlerts();Snd.ok();toast('Alert acknowledged',`${a.id} · ${a.sev}`);emit({t:'ack',sev:a.sev,id:a.id});return true}
+function threat(){const sc=ALERTS.filter(a=>!a.acked).reduce((s,a)=>s+SEV[a.sev],0);const lv=sc>=70?4:sc>=45?3:sc>=25?2:sc>=8?1:0;return{sc,lv,name:['LOW','GUARDED','ELEVATED','HIGH','SEVERE'][lv],col:['g','g','a','r','r'][lv]}}
+function alertRow(a,btn){return `<div class="al ${a.sev}${a.acked?' acked':''}"><i></i><div class="al-m"><b>${esc(a.title)}</b><span>${a.id} · ${a.sev} · ${esc(a.src)} · ${clock(a.t)}</span></div>${a.acked?'<em>ACK</em>':`<button class="btn sm" data-ack="${a.id}">ACK</button>`}</div>`}
+function renderAlerts(){const open=ALERTS.filter(a=>!a.acked);
+ $('#dashAlerts').innerHTML=open.slice(0,4).map(a=>alertRow(a)).join('')||'<div class="empty">No open alerts. All clear.</div>';
+ $('#secAlerts').innerHTML=ALERTS.slice(0,40).map(a=>alertRow(a)).join('');$('#scAlertN').textContent=open.length+' OPEN';
+ const t=threat();const segs=n=>Array.from({length:5},(_,i)=>`<b class="${i<=t.lv?'on '+t.col:''}"></b>`).join('');
+ $('#stThreat').textContent=t.name;$('#stThreat').className='sv '+t.col;$('#stThreatSub').textContent=`${open.length} open alert${open.length===1?'':'s'}`;$('#stThreatSegs').innerHTML=segs();
+ $('#scThreat').textContent=t.name;$('#scThreat').className='threat-big '+t.col;$('#scSegs').innerHTML=segs();
+ const c=s=>open.filter(a=>a.sev===s).length;
+ $('#scCounts').innerHTML=['CRITICAL','HIGH','MEDIUM','LOW'].map(s=>`<div><span>${s}</span><b class="${s==='CRITICAL'||s==='HIGH'?'c-r':s==='MEDIUM'?'c-a':''}">${c(s)}</b></div>`).join('')+`<div><span>SCORE</span><b>${t.sc}</b></div>`}
+
+/* ================= SERIES & GRAPHS ================= */
+const SER={cpu:[],mem:[],rx:[],tx:[]};
+for(let i=0;i<60;i++){SER.cpu.push(ri(18,40));SER.mem.push(ri(38,50));SER.rx.push(ri(8,30));SER.tx.push(ri(2,10))}
+const last=a=>a[a.length-1];
+function stepSeries(){const w=(a,d,lo,hi)=>{a.push(clamp(last(a)+rnd(-d,d),lo,hi));a.shift()};w(SER.cpu,7,8,88);w(SER.mem,2,30,80);w(SER.rx,9,2,96);w(SER.tx,4,1,40)}
+function drawLines(cv,sets,o={}){if(!cv)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+ if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+ const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+ const max=o.max||Math.max(1,...sets.flatMap(s=>s.data))*1.25;
+ c.strokeStyle=COL.line;c.lineWidth=1;c.setLineDash([2,4]);for(let i=1;i<5;i++){const y=Math.round(h*i/5)+.5;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}c.setLineDash([]);
+ c.fillStyle=COL.tx3;c.font='10px ui-monospace,Consolas,monospace';c.fillText(Math.round(max)+(o.unit||''),6,12);
+ sets.forEach(s=>{const n=s.data.length;c.beginPath();s.data.forEach((v,i)=>{const x=i/(n-1)*w,y=h-clamp(v/max,0,1)*(h-6)-3;i?c.lineTo(x,y):c.moveTo(x,y)});
+  c.strokeStyle=s.color;c.lineWidth=1.4;c.stroke();c.lineTo(w,h);c.lineTo(0,h);c.closePath();const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,rgba(s.color,.18));g.addColorStop(1,rgba(s.color,0));c.fillStyle=g;c.fill()})}
+const EVH=Array.from({length:24},()=>ri(4,30));
+function drawBars(cv){if(!cv)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+ if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+ const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const max=Math.max(...EVH)*1.2,bw=w/EVH.length;
+ EVH.forEach((v,i)=>{const bh=v/max*(h-22);c.fillStyle=v>max*.75?rgba(COL.r,.75):v>max*.5?rgba(COL.a,.7):rgba(COL.g,.55);c.fillRect(i*bw+3,h-bh-14,bw-6,bh);if(i%4===0){c.fillStyle=COL.tx3;c.font='9px ui-monospace,Consolas,monospace';c.fillText(pad(i)+':00',i*bw+3,h-3)}})}
+function stepStats(){const d=document;
+ d.getElementById('nRx').textContent=last(SER.rx).toFixed(1);d.getElementById('nTx').textContent=last(SER.tx).toFixed(1);
+ d.getElementById('nPkt').textContent=fmt(Math.round(last(SER.rx)*84+ri(0,300)));d.getElementById('nSess').textContent=ri(212,236)+(connected?4:0);d.getElementById('nLat').textContent=connected?ri(31,58):ri(8,19);d.getElementById('nLoss').textContent=(rnd(0,.4)).toFixed(1);
+ d.getElementById('pfCpu').textContent=Math.round(last(SER.cpu));d.getElementById('pfMem').textContent=Math.round(last(SER.mem));
+ $('#stSysSub').textContent=`CPU ${Math.round(last(SER.cpu))}% · MEM ${Math.round(last(SER.mem))}%`;$('#stCpuBar').style.width=last(SER.cpu)+'%';
+ const up=Math.floor((Date.now()-T0)/1000);$('#stSessSub').textContent=`uptime ${pad(Math.floor(up/3600))}:${pad(Math.floor(up/60)%60)}:${pad(up%60)}`;
+ $('#tbClock').textContent=clock();EVH[23]+=Math.random()<.5?1:0}
+const ticks=[];
+function drawAllGraphs(){drawLines($('#netCv'),[{data:SER.rx,color:COL.g},{data:SER.tx,color:COL.a}],{unit:' Mb'});drawLines($('#perfCv'),[{data:SER.cpu,color:COL.g},{data:SER.mem,color:COL.a}],{max:100,unit:'%'});drawBars($('#evCv'))}
+function mainTick(){stepSeries();stepStats();drawAllGraphs();ticks.forEach(f=>{try{f()}catch(e){console.error(e)}})}
+
+/* ================= OBJECTIVES / MISSIONS ================= */
+const OBJ={
+ o_conn:['Establish a simulated connection to any target',e=>e.t==='connect'],
+ o_whoami:['Run whoami to verify operator identity',e=>e.t==='cmd'&&e.c==='whoami'],
+ o_status:['Check workstation state with status',e=>e.t==='cmd'&&e.c==='status'],
+ o_scan:['Run a network scan with scan',e=>e.t==='cmd'&&e.c==='scan'],
+ o_net:['Analyse network topology with network',e=>e.t==='cmd'&&e.c==='network'],
+ o_mapnode:['Select a node on the Network Map',e=>e.t==='ui'&&e.n==='mapnode'],
+ o_ns_conn:['Connect to NORTHSTAR BANK',e=>e.t==='connect'&&e.target==='northstar'],
+ o_ns_scan:['Scan NORTHSTAR BANK services',e=>e.t==='cmd'&&e.c==='scan'&&e.target==='northstar'],
+ o_ns_fw:['Review the firewall ruleset on NORTHSTAR BANK',e=>e.t==='cmd'&&e.c==='firewall'&&e.target==='northstar'],
+ o_ns_trace:['Trace the route to NORTHSTAR BANK',e=>e.t==='cmd'&&e.c==='trace'&&e.target==='northstar'],
+ o_logs:['Review system logs with the logs command',e=>e.t==='cmd'&&e.c==='logs'],
+ o_secview:['Open the Security view',e=>e.t==='ui'&&e.n==='view'&&e.v==='security'],
+ o_logflt:['Filter the system log by WARN or ERROR',e=>e.t==='ui'&&e.n==='logfilter'&&e.f!=='ALL'],
+ o_monitor:['Stream live events with monitor',e=>e.t==='cmd'&&e.c==='monitor'],
+ o_at_conn:['Connect to ATLAS MAINFRAME',e=>e.t==='connect'&&e.target==='atlas'],
+ o_hint:['Request a cipher hint with decrypt hint',e=>e.t==='cmd'&&e.c==='decrypt'&&e.a&&e.a[0]==='hint'],
+ o_at_dec:['Decrypt the ATLAS key fragment',e=>e.t==='decrypt'&&e.target==='atlas'],
+ o_ack_crit:['Acknowledge a CRITICAL alert (ack ALRT-id)',e=>e.t==='ack'&&e.sev==='CRITICAL'],
+ o_alerts:['List open alerts with the alerts command',e=>e.t==='cmd'&&e.c==='alerts'],
+ o_mynet:['Open MY NETWORK – SIMULATED',e=>e.t==='ui'&&e.n==='view'&&e.v==='mynet'],
+ o_dev:['Inspect a simulated device',e=>e.t==='ui'&&e.n==='dev'],
+ o_sweep:['Run a simulated device sweep',e=>e.t==='ui'&&e.n==='sweep'],
+ o_ci_conn:['Connect to CITADEL GRID',e=>e.t==='connect'&&e.target==='citadel'],
+ o_ci_trace:['Trace the control route to CITADEL GRID',e=>e.t==='cmd'&&e.c==='trace'&&e.target==='citadel'],
+ o_ci_brk:['Open a substation breaker in the drill',e=>e.t==='ui'&&e.n==='breaker'&&e.open],
+ o_ci_dec:['Decrypt the CITADEL control fragment',e=>e.t==='decrypt'&&e.target==='citadel']
+};
+const MISSIONS=[
+ {id:'m1',title:'First Handshake',diff:'EASY',xp:100,desc:'Open your first simulated secure channel and confirm your operator identity.',obj:['o_conn','o_whoami','o_status']},
+ {id:'m2',title:'Map the Perimeter',diff:'EASY',xp:120,desc:'Analyse a fictional network: sweep the lab range, read the topology and inspect a node on the map.',obj:['o_scan','o_net','o_mapnode']},
+ {id:'m3',title:'Northstar Security Assessment',diff:'MEDIUM',xp:250,desc:'Complete a fictional security assessment of NORTHSTAR BANK: services, route, firewall posture.',obj:['o_ns_conn','o_ns_scan','o_ns_trace','o_ns_fw']},
+ {id:'m4',title:'Log Review',diff:'MEDIUM',xp:200,desc:'Review simulated system logs and isolate warnings and errors in the security console.',obj:['o_logs','o_secview','o_logflt','o_monitor']},
+ {id:'m5',title:'Cipher Fragment',diff:'HARD',xp:400,desc:'Solve a fictional decryption puzzle on ATLAS MAINFRAME. The cipher is a toy rotation scheme.',obj:['o_at_conn','o_hint','o_at_dec']},
+ {id:'m6',title:'Red Flag',diff:'MEDIUM',xp:250,desc:'Identify a simulated security alert and acknowledge the critical incident.',obj:['o_monitor','o_alerts','o_ack_crit']},
+ {id:'m7',title:'Home Watch',diff:'EASY',xp:150,desc:'Open MY NETWORK – SIMULATED, inspect a fictional device and run a sweep of the fictional home network.',obj:['o_mynet','o_dev','o_sweep']},
+ {id:'m8',title:'Citadel Blackout Drill',diff:'HARD',xp:450,desc:'Run a fictional grid-protection drill on CITADEL GRID: route trace, breaker isolation and control key recovery.',obj:['o_ci_conn','o_ci_trace','o_ci_brk','o_ci_dec']}
+];
+function missionProg(m){const d=m.obj.filter(o=>S.obj[o]).length;return{d,n:m.obj.length,pct:d/m.obj.length}}
+function emit(e){let ch=false;for(const id in OBJ){if(S.obj[id])continue;let ok=false;try{ok=OBJ[id][1](e)}catch(_){}if(ok){S.obj[id]=1;ch=true;onObjective(id)}}
+ if(ch){save();checkMissions();renderMissions();renderObjPanel();renderTargetCards();if(view==='target')refreshTargetObj()}}
+function onObjective(id){const tg=Object.values(TG).find(t=>t.obj.some(o=>o[0]===id));Snd.ok();toast('Objective complete',OBJ[id][0]);logEvent('INFO','Objective complete: '+OBJ[id][0],'MISSION');if(tg)addXp(75,'Target objective · '+tg.name)}
+function checkMissions(){MISSIONS.forEach(m=>{if(S.done[m.id])return;if(m.obj.every(o=>S.obj[o])){S.done[m.id]=1;save();Snd.complete();logEvent('INFO',`MISSION COMPLETE: ${m.title} (+${m.xp} XP)`,'MISSION');
+ fx(`<div class="fx-access mc"><div class="fx-kicker">MISSION COMPLETE</div><svg class="fx-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 15-17"/></svg><div class="fx-big">${esc(m.title.toUpperCase())}</div><div class="fx-sub">+${m.xp} XP &middot; ${m.diff}</div><div class="fx-line"></div></div>`,2600,'dim');
+ addXp(m.xp,'Mission · '+m.title);if(S.active===m.id){const nx=MISSIONS.find(x=>!S.done[x.id]);if(nx)S.active=nx.id;save()}renderObjPanel();renderMissions()}})}
+function renderObjPanel(){let m=MISSIONS.find(x=>x.id===S.active&&!S.done[x.id])||MISSIONS.find(x=>!S.done[x.id]);const el=$('#dashMission');
+ if(!m){el.innerHTML='<div class="empty">All missions complete. You are a NEBULA Legend in the making.</div>';return}
+ const p=missionProg(m);el.innerHTML=`<div class="mo-head"><b>${m.id.toUpperCase()} · ${esc(m.title)}</b><span class="diff ${m.diff}">${m.diff}</span></div><p class="mo-desc">${esc(m.desc)}</p><ul class="olist">${m.obj.map(o=>`<li class="${S.obj[o]?'done':''}"><i></i>${esc(OBJ[o][0])}</li>`).join('')}</ul><div class="mo-foot"><div class="bar"><i style="width:${p.pct*100}%"></i></div><span>${p.d}/${p.n} · +${m.xp} XP</span></div>`}
+function renderMissions(){$('#mCards').innerHTML=MISSIONS.map(m=>{const p=missionProg(m),d=S.done[m.id];return `<article class="mcard ${d?'done':''} ${S.active===m.id&&!d?'active':''}"><div class="mc-top"><span class="mc-id">${m.id.toUpperCase()}</span><span class="diff ${m.diff}">${m.diff}</span><span class="mc-xp">+${m.xp} XP</span></div><h3>${esc(m.title)}</h3><p>${esc(m.desc)}</p><ul class="olist">${m.obj.map(o=>`<li class="${S.obj[o]?'done':''}"><i></i>${esc(OBJ[o][0])}</li>`).join('')}</ul><div class="mo-foot"><div class="bar"><i style="width:${p.pct*100}%"></i></div><span>${d?'COMPLETED':p.d+'/'+p.n}</span></div>${d?'<div class="mc-badge">&#10003; COMPLETE</div>':`<button class="btn sm" data-mact="${m.id}">${S.active===m.id?'ACTIVE MISSION':'SET ACTIVE'}</button>`}</article>`}).join('')}
+
+/* ================= TARGET DATA ================= */
+const TG={
+ orbital:{id:'orbital',tag:'OA',alias:['orbital','oa','archive'],name:'ORBITAL ARCHIVE',type:'Satellite Telemetry Repository',ip:'198.51.100.14',domain:'core.orbital-archive.invalid',host:'oa-core',user:'op',path:'/archive',ac:'#4fbf9f',sec:2,secLabel:'MODERATE',
+  desc:'Fictional deep-space telemetry vault run by a consortium of ground stations. Holds forty years of orbital data, ephemeris tables and uplink key material.',
+  os:'OrbitOS 7.3 LTS (Linux 5.15-orb)',loc:'Equatorial Ground Segment, Sector 4',uptime:'412d 06h',
+  services:[[22,'ssh','OPEN','OpenSSH 8.9 (sim build)'],[443,'https','OPEN','telemetry-gw/2.1'],[5671,'amqps','OPEN','ground-station bus'],[8443,'mgmt','FILTERED','admin console'],[9100,'tm-stream','OPEN','CCSDS relay']],
+  banner:['*** ORBITAL ARCHIVE — GROUND SEGMENT GATEWAY ***','Authorised personnel only. All sessions are recorded (simulation).','Next scheduled uplink window: T+00:14:32'],
+  steps:['Resolving core.orbital-archive.invalid','Negotiating CCSDS-secure channel (suite OA-2)','Exchanging ephemeral keys','Validating ground-station certificates','Acquiring uplink window','Mounting /archive (read-only)'],
+  hosts:[['oa-core','198.51.100.14','Archive controller','ONLINE'],['oa-gs-01','198.51.100.21','Ground station relay','ONLINE'],['oa-tm-02','198.51.100.22','Telemetry decoder','ONLINE'],['oa-vault','198.51.100.30','Cold storage array','DEGRADED']],
+  rules:[['ALLOW','tcp','ground-stations','oa-core','443'],['ALLOW','tcp','mgmt-vlan','oa-core','22'],['ALLOW','tcp','oa-gs-*','oa-tm-02','5671'],['DENY','any','0.0.0.0/0','oa-core','8443'],['DENY','any','0.0.0.0/0','oa-vault','*']],
+  hops:[['gw.nebula.lab','10.77.0.1'],['edge1.carrier-net.invalid','192.0.2.9'],['sat-uplink.relay.invalid','192.0.2.44'],['gs-mux.orbital-archive.invalid','198.51.100.2'],['core.orbital-archive.invalid','198.51.100.14']],
+  mon:[['INFO','Telemetry frame 0x7F3A received from OA-SAT-1'],['INFO','Ephemeris update accepted (epoch 2026-322)'],['WARN','Signal margin on OA-SAT-3 dropped to 2.1 dB'],['INFO','Archive shard 14/96 checksum verified'],['WARN','Unscheduled uplink request from gs-relay-9'],['INFO','Cold storage tape robot idle'],['ERROR','CRC mismatch in frame 0x7F41 — retransmit requested'],['INFO','Doppler correction applied (+1.84 kHz)']],
+  logs:[['INFO','archive.mount','/archive mounted ro, 38.2 TB indexed'],['WARN','uplink.queue','3 pending commands exceed window budget'],['INFO','auth.sshd','Accepted publickey for op from 10.77.0.2'],['ERROR','vault.array','Disk bay 7 SMART pre-failure warning'],['INFO','cron.sync','Nightly ephemeris sync completed'],['WARN','tm.decoder','Frame drop rate 0.8% on stream 9100']],
+  word:'APOGEE',shift:3,file:'uplink_keys.enc',note:'Uplink key rotation window opens at T+06:00. Keep OA-SAT-3 in safe mode until then.',
+  obj:[['t_oa1','Open the secure uplink to ORBITAL ARCHIVE',e=>e.t==='connect'&&e.target==='orbital'],['t_oa2','Open telemetry_0417.log in the archive viewer',e=>e.t==='ui'&&e.n==='file'&&e.f==='telemetry_0417.log'],['t_oa3','Decrypt the uplink key fragment',e=>e.t==='decrypt'&&e.target==='orbital']]},
+ northstar:{id:'northstar',tag:'NB',alias:['northstar','bank','ns'],name:'NORTHSTAR BANK',type:'Retail Banking Core',ip:'203.0.113.52',domain:'core.northstar-bank.invalid',host:'ns-core01',user:'auditor',path:'/ledger',ac:'#dba43e',sec:4,secLabel:'HIGH',
+  desc:'Fictional regional bank core. Hardened settlement network, HSM cluster and a real-time fraud engine. Strict segmentation and strong monitoring.',
+  os:'SecureLedger OS 12 (BSD-derived)',loc:'Primary Data Centre, Zone B',uptime:'87d 14h',
+  services:[[443,'https','OPEN','retail-portal/9.4 (WAF)'],[8443,'api-gw','OPEN','payments gateway'],[1521,'ledger-db','FILTERED','internal only'],[3270,'tn3270','CLOSED','legacy terminal'],[4433,'hsm','FILTERED','HSM cluster 3/3']],
+  banner:['NORTHSTAR BANK PLC — INTERNAL AUDIT ACCESS','Unauthorised access is prohibited (fictional notice).','Audit role: READ-ONLY · Session recorded'],
+  steps:['Resolving core.northstar-bank.invalid','Presenting audit client certificate','Mutual TLS handshake (AES-256-GCM)','Challenging hardware token','Verifying audit role entitlements','Opening read-only ledger view'],
+  hosts:[['ns-core01','203.0.113.52','Ledger core','ONLINE'],['ns-hsm-a','203.0.113.60','HSM node A','ONLINE'],['ns-fraud','203.0.113.71','Fraud engine','ONLINE'],['ns-swift','203.0.113.80','Interbank gateway','ONLINE'],['ns-dr01','203.0.113.95','Disaster recovery','DEGRADED']],
+  rules:[['ALLOW','tcp','retail-waf','ns-core01','8443'],['ALLOW','tcp','audit-vlan','ns-core01','443'],['DENY','tcp','0.0.0.0/0','ns-hsm-a','4433'],['DENY','any','guest-wifi','ledger-zone','*'],['ALLOW','tcp','ns-fraud','ns-core01','1521']],
+  hops:[['gw.nebula.lab','10.77.0.1'],['edge2.carrier-net.invalid','192.0.2.17'],['ix-lon.backbone.invalid','192.0.2.101'],['waf-1.northstar-bank.invalid','203.0.113.5'],['dmz-fw.northstar-bank.invalid','203.0.113.9'],['core.northstar-bank.invalid','203.0.113.52']],
+  mon:[['INFO','Settlement batch 4471 closed (1,284 items)'],['WARN','Fraud engine: velocity rule hit on account ****4821'],['INFO','HSM key ceremony heartbeat OK'],['ERROR','Card auth timeout via upstream scheme (retry 2/3)'],['WARN','Teller terminal T-19 login outside shift hours'],['INFO','SWIFT-style message queue depth 12'],['WARN','Structured deposits pattern flagged (risk 91)'],['INFO','Ledger snapshot replicated to ns-dr01']],
+  logs:[['INFO','ledger.core','End-of-day reconciliation completed'],['WARN','fraud.engine','12 transactions held for manual review'],['INFO','auth.audit','Role AUDIT_RO granted to auditor (MFA verified)'],['ERROR','dr.replication','Replication lag 94s exceeds SLA'],['INFO','hsm.cluster','Key usage counters within limits'],['WARN','waf.edge','Blocked 314 injection attempts (last hour)']],
+  word:'LEDGER',shift:5,file:'audit_seal.enc',note:'Dual control required for vault release. Reserve vault: SEALED.',
+  obj:[['t_ns1','Establish the audit session with NORTHSTAR BANK',e=>e.t==='connect'&&e.target==='northstar'],['t_ns2','Escalate a high-risk transaction in the ledger',e=>e.t==='ui'&&e.n==='flag'&&e.anomaly],['t_ns3','Review the NORTHSTAR firewall ruleset',e=>e.t==='cmd'&&e.c==='firewall'&&e.target==='northstar']]},
+ citadel:{id:'citadel',tag:'CG',alias:['citadel','grid','cg'],name:'CITADEL GRID',type:'Regional Power Control Network',ip:'198.51.100.140',domain:'scada.citadel-grid.invalid',host:'cg-scada',user:'dispatch',path:'/control',ac:'#d9534f',sec:3,secLabel:'ELEVATED',
+  desc:'Fictional regional electricity grid control centre. Twelve substations under a supervisory control system running in DRILL mode for this exercise.',
+  os:'GridWorks SCADA 5.8 (RTOS gateway)',loc:'Central Dispatch, Region 9',uptime:'203d 02h',
+  services:[[102,'s7-sim','FILTERED','PLC protocol gateway'],[502,'modbus-sim','FILTERED','field bus bridge'],[8080,'hmi','OPEN','operator HMI'],[22,'ssh','OPEN','engineering jump host'],[20000,'dnp3-sim','OPEN','substation telemetry']],
+  banner:['CITADEL GRID — CENTRAL DISPATCH','*** DRILL MODE ACTIVE: no live equipment is affected ***','Frequency target 50.00 Hz · Reserve margin 14%'],
+  steps:['Resolving scada.citadel-grid.invalid','Tunnelling via engineering jump host','Authenticating dispatcher role','Syncing SCADA time source (GPS-sim)','Subscribing to substation telemetry','Entering DRILL mode sandbox'],
+  hosts:[['cg-scada','198.51.100.140','SCADA master','ONLINE'],['cg-hmi-1','198.51.100.141','Operator HMI','ONLINE'],['cg-rtu-gw','198.51.100.150','RTU gateway','ONLINE'],['cg-hist','198.51.100.160','Historian','ONLINE'],['cg-ss07','198.51.100.167','Substation 07 RTU','DEGRADED']],
+  rules:[['ALLOW','tcp','eng-jump','cg-scada','22'],['ALLOW','tcp','dispatch-vlan','cg-hmi-1','8080'],['DENY','any','corp-it','field-bus','*'],['ALLOW','udp','cg-rtu-gw','cg-hist','20000'],['DENY','any','0.0.0.0/0','cg-scada','102']],
+  hops:[['gw.nebula.lab','10.77.0.1'],['edge1.carrier-net.invalid','192.0.2.9'],['wan-r9.citadel-grid.invalid','198.51.100.131'],['jump.citadel-grid.invalid','198.51.100.138'],['scada.citadel-grid.invalid','198.51.100.140']],
+  mon:[['INFO','Grid frequency 50.01 Hz — within band'],['WARN','Substation SS-07 voltage deviation +4.2%'],['INFO','Load forecast updated: peak 3,140 MW at 19:30'],['ERROR','RTU SS-11 communication timeout (30s)'],['WARN','Breaker B-304 operated outside schedule (drill)'],['INFO','Historian archived 1.2M points'],['WARN','Reserve margin dipped below 15%'],['INFO','Automatic voltage regulation engaged at SS-03']],
+  logs:[['INFO','scada.core','Drill scenario BLACKOUT-2 loaded'],['WARN','rtu.ss07','Intermittent link, retries 6/10'],['INFO','auth.hmi','Dispatcher login accepted'],['ERROR','rtu.ss11','No response since 14:02:11'],['INFO','hist.db','Compression job finished'],['WARN','ems.forecast','Wind generation forecast error 11%']],
+  word:'SUBSTATION',shift:11,file:'rtu_master.enc',note:'Islanding procedure requires two dispatchers. Drill breaker sequence: SS-04, SS-07, SS-09.',
+  obj:[['t_cg1','Open the SCADA session on CITADEL GRID',e=>e.t==='connect'&&e.target==='citadel'],['t_cg2','Trace the control route to the SCADA master',e=>e.t==='cmd'&&e.c==='trace'&&e.target==='citadel'],['t_cg3','Open a substation breaker in the drill',e=>e.t==='ui'&&e.n==='breaker'&&e.open]]},
+ atlas:{id:'atlas',tag:'AM',alias:['atlas','mainframe','am'],name:'ATLAS MAINFRAME',type:'Legacy Enterprise Mainframe',ip:'192.0.2.200',domain:'mvs1.atlas-systems.invalid',host:'ATLAS01',user:'SYSOPR',path:'/SYS1',ac:'#c9d1d1',sec:5,secLabel:'MAXIMUM',
+  desc:'Fictional air-gapped mainframe of a defunct computing giant. Batch jobs, tape vaults and a very paranoid operator. Highest security rating of the four.',
+  os:'ATLAS/OS 9.1 (z-series sim)',loc:'Sub-level 3, Machine Hall A',uptime:'1,904d 11h',
+  services:[[23,'tn3270','OPEN','operator console'],[992,'tn3270s','OPEN','TLS console'],[1414,'mq','FILTERED','message queue'],[3990,'jes','FILTERED','job entry'],[4096,'vault','CLOSED','tape vault control']],
+  banner:['ATLAS/OS 9.1  SYSTEM ATLAS01  CONSOLE SYSOPR','*** RESTRICTED SYSTEM — ALL ACTIVITY LOGGED ***','IEA101A SPECIFY SYSTEM PARAMETERS — SIMULATION'],
+  steps:['Resolving mvs1.atlas-systems.invalid','Opening TN3270E session','Negotiating SNA bind (LU type 2)','Presenting operator credentials token','Verifying RACF-style profile SYSOPR','Attaching to console ATLAS01'],
+  hosts:[['ATLAS01','192.0.2.200','Primary LPAR','ONLINE'],['ATLAS02','192.0.2.201','Failover LPAR','ONLINE'],['TAPEVLT','192.0.2.210','Tape vault controller','DEGRADED'],['JESNET','192.0.2.220','Job entry network','ONLINE']],
+  rules:[['ALLOW','tcp','console-vlan','ATLAS01','992'],['DENY','tcp','0.0.0.0/0','ATLAS01','23'],['DENY','any','0.0.0.0/0','TAPEVLT','*'],['ALLOW','tcp','ATLAS02','ATLAS01','1414'],['DENY','any','ext-net','JESNET','3990']],
+  hops:[['gw.nebula.lab','10.77.0.1'],['edge3.carrier-net.invalid','192.0.2.33'],['airgap-proxy.atlas-systems.invalid','192.0.2.190'],['ctl.atlas-systems.invalid','192.0.2.199'],['mvs1.atlas-systems.invalid','192.0.2.200']],
+  mon:[['INFO','IEF403I JOB PAYRL07 STARTED'],['WARN','IEC030I I/O ERROR ON VOLUME TAPE04'],['INFO','IEF404I JOB LEDGR11 ENDED — RC=0000'],['ERROR','IEA995I SYMPTOM DUMP OUTPUT — ABEND S0C7'],['WARN','IRA200E AVAILABLE FRAMES BELOW THRESHOLD'],['INFO','IEE136I LOCAL TIME=14.22.05'],['WARN','ICH408I USER(OPER2) ACCESS DENIED TO SYS1.PARMLIB'],['INFO','IEF450I JOB CRYPT03 STEP02 COMPLETE']],
+  logs:[['INFO','JES2','BATCH QUEUE DEPTH 41'],['WARN','RACF','3 FAILED LOGON ATTEMPTS FOR USER OPER2'],['INFO','SMF','TYPE 30 RECORDS WRITTEN: 18,442'],['ERROR','TAPE','VOLUME TAPE04 PERMANENT READ ERROR'],['INFO','CONSOLE','OPERATOR SYSOPR LOGGED ON'],['WARN','VTAM','LU T0412 SESSION TERMINATED ABNORMALLY']],
+  word:'MAINFRAME',shift:9,file:'CRYPT03.KEY',note:'Tape vault release requires physical key switch. Do not IPL during batch window.',
+  obj:[['t_am1','Attach to the ATLAS01 operator console',e=>e.t==='connect'&&e.target==='atlas'],['t_am2','Map the ATLAS internal hosts with network',e=>e.t==='cmd'&&e.c==='network'&&e.target==='atlas'],['t_am3','Place a batch job on HOLD in the job queue',e=>e.t==='ui'&&e.n==='job'&&e.hold]]}
+};
+Object.values(TG).forEach(t=>t.obj.forEach(o=>{OBJ[o[0]]=[o[1],o[2]]}));
+// Atlas and Citadel decrypt objectives are mission-level; Orbital's decrypt is target-level
+function findTarget(q){if(!q)return null;q=q.toLowerCase();return Object.values(TG).find(t=>t.alias.includes(q)||t.id.startsWith(q))||null}
+const caesar=(s,k)=>s.replace(/[A-Z]/g,c=>String.fromCharCode((c.charCodeAt(0)-65+k)%26+65));
+const FWR=[['ALLOW','tcp','10.77.0.0/24','any','443'],['ALLOW','udp','10.77.0.0/24','10.77.0.53','53'],['ALLOW','tcp','10.77.0.2','198.51.100.0/24','22'],['DENY','tcp','0.0.0.0/0','10.77.0.0/24','23'],['DENY','any','203.0.113.66','any','*'],['DENY','tcp','0.0.0.0/0','10.77.0.12','445'],['ALLOW','icmp','10.77.0.0/24','any','*'],['DENY','any','0.0.0.0/0','any','*']].map((r,i)=>({id:'FW-'+pad(100+i,3),act:r[0],proto:r[1],src:r[2],dst:r[3],port:r[4],hits:ri(100,9000),on:true}));
+const SOLVED={},HINTS={};
+
+/* ================= TERMINAL ================= */
+const ABORT={abort:true};
+const TERM={out:$('#termOut'),body:$('#termBody'),inp:$('#cmdin'),busy:false,abort:false,hi:-1,typer:false,typed:0,lastGrant:0,cp:0,buf:'',tl:null};
+const speedMul=()=>[1.7,1.25,1,.55,.2][S.settings.speed-1];
+const lineDelay=()=>[120,80,45,22,6][S.settings.speed-1];
+const HL_RE=/(\b\d{1,3}(?:\.\d{1,3}){3}(?:\/\d{1,2})?\b)|(\[(?:OK|DONE|PASS|ALLOW|ONLINE|SECURE)\])|(\[(?:WARN|FILTERED|DEGRADED)\])|(\[(?:FAIL|ERR|ERROR|DENY|BLOCK|CRIT)\])|(\[INFO\])|(\b(?:OPEN|ACTIVE|ONLINE|SECURE|GRANTED|ESTABLISHED|VERIFIED|ALLOW)\b)|(\b(?:FILTERED|DEGRADED|ELEVATED|GUARDED|WARNING|PENDING|MODERATE|MEDIUM)\b)|(\b(?:CLOSED|DENIED|CRITICAL|FAILED|OFFLINE|BLOCKED|SEVERE|DENY|HIGH)\b)|(\b0x[0-9a-fA-F]+\b)|((?:^|\s)--?[a-zA-Z][\w-]*)|((?:^|\s)\/(?:[\w.\-]+\/)*[\w.\-]+)/g;
+const HL_CLS=['ip','ok','warn','err','info','ok','warn','err','hex','flag','path'];
+function hl(text){let out='',lastI=0,m;HL_RE.lastIndex=0;while((m=HL_RE.exec(text))){out+=esc(text.slice(lastI,m.index));let g=1;while(g<m.length&&m[g]===undefined)g++;out+=`<span class="h-${HL_CLS[g-1]}">${esc(m[0])}</span>`;lastI=m.index+m[0].length;if(!m[0].length)HL_RE.lastIndex++}return out+esc(text.slice(lastI))}
+const CODE_RE=/(\/\/.*|#(?!include|define|pragma).*)|("(?:[^"\\]|\\.)*"|'[^']*')|\b(int|void|char|const|static|return|if|else|for|while|struct|def|class|import|from|uint8_t|uint32_t|size_t|bool|true|false|NULL|await|async|let|func|fn|try|except|catch|lambda)\b|(#include|#define|#pragma)|(\b0x[0-9a-fA-F]+\b|\b\d+\b)|(\b[a-zA-Z_]\w*)(?=\()/g;
+const CODE_CLS=['com','str','kw','pre','num','fn'];
+function hlCode(text){let out='',lastI=0,m;CODE_RE.lastIndex=0;while((m=CODE_RE.exec(text))){out+=esc(text.slice(lastI,m.index));let g=1;while(g<m.length&&m[g]===undefined)g++;out+=`<span class="c-${CODE_CLS[g-1]}">${esc(m[0])}</span>`;lastI=m.index+m[0].length;if(!m[0].length)CODE_RE.lastIndex++}return out+esc(text.slice(lastI))}
+function scrollEnd(){TERM.body.scrollTop=TERM.body.scrollHeight}
+function line(txt,cls='',o={}){const d=document.createElement('div');d.className='tl '+cls+(o.ind?' indt':'');d.innerHTML=(o.ts===false?'':`<span class="ts">[${clock()}]</span> `)+(o.raw?txt:hl(txt));TERM.out.appendChild(d);while(TERM.out.children.length>700)TERM.out.firstChild.remove();scrollEnd();return d}
+async function say(txt,cls='',o={}){if(TERM.abort)throw ABORT;const d=line(txt,cls,o);if(!o.fast)await sleep(lineDelay());return d}
+const ind=(txt,cls='',o={})=>say(txt,cls,{...o,ts:false,ind:true});
+async function bar(label,ms=1200,o={}){const d=line('','prog',{raw:true});const W=24,dur=ms*speedMul(),t0=performance.now();
+ for(;;){if(TERM.abort)throw ABORT;const p=clamp((performance.now()-t0)/dur,0,1),n=Math.round(p*W);
+  d.innerHTML=`<span class="ts">[${clock()}]</span> ${esc(label.padEnd(30).slice(0,30))} <span class="pb-b">${'█'.repeat(n)}<em>${'░'.repeat(W-n)}</em></span> <span class="pb-p">${String(Math.round(p*100)).padStart(3)}%</span>`;scrollEnd();if(p>=1)break;await sleep(50)}
+ d.insertAdjacentHTML('beforeend',` <span class="h-ok">${o.done||'[OK]'}</span>`)}
+function kv(k,v,w=16){return `${k.padEnd(w)}${v}`}
+const who=()=>{const t=connected&&TG[connected];return t?{u:t.user,h:t.host,p:t.path}:{u:'ghost',h:'nebula',p:'~'}};
+function psTop(){const w=who();return `<span class="ps-l">┌──(</span><span class="ps-u">${esc(w.u)}</span><span class="ps-l">@</span><span class="ps-h">${esc(w.h)}</span><span class="ps-l">)-[</span><span class="ps-p">${esc(w.p)}</span><span class="ps-l">]</span>`}
+const psSym=()=>`<span class="ps-l">└─</span><span class="ps-s">${connected?'#':'$'}</span> `;
+function cmdHtml(v,pos){let out='',first=true,word=0,i=0;const cls=new Array(v.length);
+ const re=/\S+/g;let m;while((m=re.exec(v))){const c=word===0?'cmd':m[0].startsWith('-')?'flag':'arg';for(let k=m.index;k<m.index+m[0].length;k++)cls[k]=c;word++}
+ const ch=k=>{const c=v[k]===undefined?' ':v[k];return `<span class="x-${cls[k]||'sp'}">${esc(c)}</span>`};
+ for(i=0;i<v.length;i++){out+=i===pos?`<span class="cur">${ch(i)}</span>`:ch(i)}
+ if(pos>=v.length)out+='<span class="cur"><span> </span></span>';return out}
+function renderPrompt(){$('#psTop').innerHTML=psTop();$('#psSym').innerHTML=psSym();const w=who();$('#termTitle').textContent=`${w.u}@${w.h}: ${w.p}`;renderInput()}
+function renderInput(){const v=TERM.inp.value,p=TERM.inp.selectionStart==null?v.length:TERM.inp.selectionStart;$('#cmdView').innerHTML=cmdHtml(v,p)}
+function setBusy(b){TERM.busy=b;TERM.inp.readOnly=b;$('#promptWrap').classList.toggle('busy',b);if(!b){renderPrompt();scrollEnd()}}
+function echo(raw){const d=document.createElement('div');d.className='tl echo';d.innerHTML=`<div>${psTop()}</div><div>${psSym()}${cmdHtml(raw,-1)}</div>`;TERM.out.appendChild(d);scrollEnd()}
+const CMDS=['help','scan','status','connect','disconnect','decrypt','trace','monitor','network','firewall','whoami','clear','targets','missions','alerts','ack','logs','typer','history','exit'];
+function suggest(c){return CMDS.find(x=>x[0]===c[0]&&Math.abs(x.length-c.length)<3)||CMDS.find(x=>x.startsWith(c.slice(0,2)))}
+
+async function exec(raw){const txt=raw.trim();setBusy(true);echo(raw);
+ if(txt){if(S.hist[S.hist.length-1]!==txt)S.hist.push(txt);S.hist=S.hist.slice(-80);save()}
+ TERM.hi=-1;
+ if(txt){const parts=txt.split(/\s+/),c=parts[0].toLowerCase(),a=parts.slice(1),f=CMD[c];cmdTarget=connected;
+  try{if(f){Snd.click();await f(a,c);emit({t:'cmd',c,target:cmdTarget,a})}else{Snd.err();await say(`${parts[0]}: command not found — type help for available commands`,'err');const s=suggest(c);if(s)await ind(`did you mean: ${s} ?`,'dim')}}
+  catch(e){if(e===ABORT){line('^C','dim',{ts:false})}else{console.error(e);line('runtime fault: '+e.message,'err')}}}
+ TERM.abort=false;setBusy(false)}
+
+/* ---- commands ---- */
+const CMD={};
+CMD.help=async()=>{await say('NEBULA shell 4.2 — command reference','info');
+ const rows=[['help','Show this reference'],['scan [target]','Sweep the lab range, or probe a target'],['status','Workstation, session and link status'],['connect <target>','Open a secure channel (orbital, northstar, citadel, atlas)'],['disconnect','Close the active channel'],['decrypt [hint|<text>]','Recover a fictional encrypted fragment'],['trace [target]','Trace the route to a target'],['monitor','Stream live telemetry and events'],['network','Network topology / interface summary'],['firewall [rules|block <ip>|allow <ip>]','Firewall status and rules'],['whoami','Operator identity and clearance'],['clear','Clear the terminal'],['targets · missions · alerts · logs','Overview commands'],['ack <ALRT-id>','Acknowledge a security alert'],['typer','Hacker-typer mode: any key streams code']];
+ for(const r of rows)await ind(`  <span class="h-cmd">${esc(r[0].padEnd(38))}</span>${esc(r[1])}`,'',{raw:true});
+ await ind('Tip: Tab completes · ↑/↓ history · Ctrl+C aborts. Everything here is fictional.','dim')};
+CMD.clear=async()=>{TERM.out.innerHTML=''};
+CMD.whoami=async()=>{const r=rankInfo(),t=connected&&TG[connected];
+ await say('ghost  (uid=1337 gid=1337 groups=analysts,sim-ops)','ok');
+ for(const l of [kv('Operator','GHOST-7'),kv('Clearance','LEVEL '+(r.i+2)+' — RESTRICTED (SIMULATION)'),kv('Rank',`${r.cur.n} · ${fmt(S.xp)} XP`),kv('Session',SESSION),kv('Workstation','nebula-ws-04 (virtual)'),kv('Remote identity',t?`${t.user}@${t.host}`:'— none —')])await ind(l);
+ await ind('Identity verified against local simulation registry.','dim')};
+CMD.status=async()=>{const t=connected&&TG[connected],th=threat(),up=Math.floor((Date.now()-T0)/1000);
+ await say('NEBULA operator status','info');
+ for(const l of [kv('Session',`${SESSION}  uptime ${pad(Math.floor(up/3600))}:${pad(Math.floor(up/60)%60)}:${pad(up%60)}`),kv('Link',t?`ESTABLISHED → ${t.name} (${t.ip})`:'IDLE — no active channel'),kv('Workstation',`CPU ${Math.round(last(SER.cpu))}%  MEM ${Math.round(last(SER.mem))}%  RX ${last(SER.rx).toFixed(1)} Mb/s  TX ${last(SER.tx).toFixed(1)} Mb/s`),kv('Threat level',`${th.name} (${ALERTS.filter(a=>!a.acked).length} open alerts)`),kv('Target',sel?TG[sel].name:'none selected'),kv('Mode','SIMULATION — no external traffic'),kv('Progress',`${rankInfo().cur.n} · ${fmt(S.xp)} XP · ${Object.keys(S.done).length}/${MISSIONS.length} missions`)])await ind(l);
+ await bar('Self-test',700)};
+CMD.targets=async()=>{await say('Known fictional targets','info');for(const t of Object.values(TG))await ind(`  ${t.id.padEnd(10)} ${t.name.padEnd(17)} ${t.ip.padEnd(16)} SEC ${'■'.repeat(t.sec)}${'□'.repeat(5-t.sec)} ${t.secLabel}`);await ind('Use: connect <name>','dim')};
+CMD.missions=async()=>{await say('Mission board','info');for(const m of MISSIONS){const p=missionProg(m);await ind(`  [${m.id.toUpperCase()}] ${m.title.padEnd(32)} ${S.done[m.id]?'COMPLETE':p.d+'/'+p.n}   ${m.diff}   +${m.xp} XP`)}};
+CMD.alerts=async()=>{const o=ALERTS.filter(a=>!a.acked);await say(`${o.length} open alert(s)`,o.length?'warn':'ok');for(const a of o.slice(0,8))await ind(`  ${a.id}  ${a.sev.padEnd(9)} ${a.title}`,a.sev==='CRITICAL'||a.sev==='HIGH'?'err':'warn');if(o.length)await ind('Acknowledge with: ack <ALRT-id>','dim')};
+CMD.ack=async(a)=>{if(!a[0]){await say('usage: ack <ALRT-id>','warn');return}const id=/^\d+$/.test(a[0])?'ALRT-'+a[0]:a[0].toUpperCase();const al=ALERTS.find(x=>x.id===id);if(!al){await say(`ack: no such alert '${a[0]}'`,'err');return}if(al.acked){await say(`${id} already acknowledged`,'warn');return}await bar('Writing acknowledgement',600);ackAlert(id);await say(`[OK] ${id} (${al.sev}) acknowledged — incident record updated`,'ok')};
+CMD.logs=async(a)=>{const t=connected&&TG[connected];if(t){await say(`Reading system logs on ${t.host}`,'info');for(const l of t.logs){const c=l[0]==='ERROR'?'err':l[0]==='WARN'?'warn':'';await say(`[${l[0]}] ${l[1].padEnd(14)} ${l[2]}`,c)}}
+ const n=clamp(parseInt(a[0])||6,1,20);await say(`Last ${n} workstation events`,'info');for(const e of LOGS.slice(-n)){await ind(`${clock(e.t)} [${e.level}] ${e.src.padEnd(9)} ${e.msg}`,e.level==='ERROR'?'err':e.level==='WARN'?'warn':'dim')}};
+CMD.history=async()=>{S.hist.slice(-15).forEach((h,i)=>line(`${String(i+1).padStart(3)}  ${h}`,'dim',{ts:false,ind:true}))};
+CMD.scan=async(a)=>{let t=null;if(a[0]){t=findTarget(a[0]);if(!t){await say(`scan: unknown target '${a[0]}'`,'err');return}}else if(connected)t=TG[connected];
+ if(t){cmdTarget=t.id;await say(`NEBULA-scan 4.2 — probing ${t.ip} (${t.name}) [simulation]`,'info');await bar('Host discovery',800);await bar('Port enumeration',1300);await bar('Service fingerprinting',1000);
+  await ind('PORT      STATE      SERVICE      NOTE','dim');for(const s of t.services)await ind(`${(s[0]+'/tcp').padEnd(9)} ${s[2].padEnd(10)} ${s[1].padEnd(12)} ${s[3]}`);
+  await say(`OS guess: ${t.os}`);await say(`Security rating: ${'■'.repeat(t.sec)}${'□'.repeat(5-t.sec)} ${t.secLabel}`,t.sec>=4?'warn':'');await say(`Scan complete: ${t.services.length} ports in ${rnd(2.1,6.4).toFixed(2)}s`,'ok');if(!connected)await ind('Hint: connect '+t.id,'dim');return}
+ await say('NEBULA-scan 4.2 — sweeping lab range 10.77.0.0/24 [simulation]','info');await bar('ARP discovery',1100);await bar('Host fingerprinting',1300);
+ await ind('HOST            NAME               ROLE                 STATE','dim');
+ for(const h of [['10.77.0.1','gateway.nebula.lab','router','ONLINE'],['10.77.0.12','vault-sim-01','file server','ONLINE'],['10.77.0.19','ops-db.lab','database','ONLINE'],['10.77.0.33','camera-gw','IoT bridge','DEGRADED'],['10.77.0.41','dev-ws-041','workstation (beaconing)','ONLINE'],['10.77.0.77','honeypot-7','decoy','ONLINE']])await ind(`${h[0].padEnd(15)} ${h[1].padEnd(18)} ${h[2].padEnd(20)} ${h[3]}`,h[0]==='10.77.0.41'?'warn':'');
+ await say('6 hosts up · 1 anomaly flagged (10.77.0.41). Check: alerts','warn')};
+CMD.trace=async(a)=>{const t=a[0]?findTarget(a[0]):(connected?TG[connected]:(sel?TG[sel]:null));if(a[0]&&!t){await say(`trace: unknown target '${a[0]}'`,'err');return}if(!t){await say('trace: no target — usage: trace <target>','warn');return}
+ cmdTarget=t.id;await say(`trace to ${t.domain} (${t.ip}), 30 hops max`,'info');let ms=2;
+ for(let i=0;i<t.hops.length;i++){ms+=ri(3,24);const h=t.hops[i];await ind(`${String(i+1).padStart(2)}  ${h[0].padEnd(36)} ${h[1].padEnd(16)} ${(ms+rnd(0,2)).toFixed(1)} ms  ${(ms+rnd(0,3)).toFixed(1)} ms`);await sleep(lineDelay()*3)}
+ await say(`Route resolved: ${t.hops.length} hops · ${ms.toFixed(1)} ms · no packet loss`,'ok');await ind(`Edge control: ${t.hops[t.hops.length-2][0]}`,'dim')};
+CMD.monitor=async()=>{const t=connected&&TG[connected];await say(`NEBULA monitor — streaming ${t?t.name:'workstation'} telemetry (Ctrl+C to stop)`,'info');
+ const pool=t?t.mon:[['INFO','nebula0 link up, 1000 Mb/s full duplex'],['WARN','Beacon-like traffic from 10.77.0.41 to 203.0.113.66'],['INFO','Sandbox detonation queue empty'],['INFO','EDR agent check-in from dev-ws-041'],['ERROR','Blocked outbound connection to 203.0.113.66:4444'],['INFO','IDS signature set 2026.322 loaded'],['WARN','Unusual process tree on ops-db.lab'],['INFO','Honeypot-7 interaction logged from 198.51.100.77']];
+ const counts={INFO:0,WARN:0,ERROR:0};for(const e of pool){counts[e[0]]++;logEvent(e[0],e[1],'MONITOR');await say(`[${e[0]}] ${e[1]}`,e[0]==='ERROR'?'err':e[0]==='WARN'?'warn':'');await sleep(lineDelay()*4+120)}
+ await say(`Stream closed — ${counts.INFO} info · ${counts.WARN} warn · ${counts.ERROR} error`,'ok');if(!ALERTS.some(x=>!x.acked&&x.sev==='HIGH')&&Math.random()<.6)addAlert('HIGH','Telemetry anomaly correlated by monitor stream','SIEM')};
+CMD.network=async()=>{const t=connected&&TG[connected];
+ if(t){await say(`${t.name} — internal topology`,'info');await bar('Walking routing table',900);
+  for(let i=0;i<t.hosts.length;i++){const h=t.hosts[i];await ind(`  ${i===t.hosts.length-1?'└─':'├─'} ${h[0].padEnd(11)} ${h[1].padEnd(16)} ${h[2].padEnd(22)} ${h[3]}`)}
+  await say(`${t.hosts.length} internal hosts mapped across 2 segments`,'ok');return}
+ await say('Interface nebula0 — workstation network configuration','info');
+ for(const l of [kv('inet','10.77.0.2/24  brd 10.77.0.255'),kv('gateway','10.77.0.1 (gateway.nebula.lab)'),kv('dns','10.77.0.53'),kv('mtu / speed','1500 / 1000 Mb/s full'),kv('rx packets',fmt(ri(1200000,1900000))+'  errors 0 dropped 2'),kv('tx packets',fmt(ri(700000,990000))+'  errors 0 dropped 0'),kv('route','default via 10.77.0.1 dev nebula0 metric 100')])await ind(l);
+ await ind('Tip: open NETWORK MAP or MY NETWORK for visual views.','dim')};
+CMD.firewall=async(a)=>{const t=connected&&TG[connected];const sub=(a[0]||'rules').toLowerCase();
+ if(sub==='block'||sub==='allow'){if(!a[1]||!/^[\d.\/a-z-]+$/i.test(a[1])){await say(`usage: firewall ${sub} <address>`,'warn');return}await bar('Compiling rule',600);
+  const act=sub==='block'?'DENY':'ALLOW';if(t)t.rules.push([act,'any',a[1],t.host,'*']);else{FWR.unshift({id:'FW-'+pad(100+FWR.length,3),act,proto:'any',src:a[1],dst:'any',port:'*',hits:0,on:true});renderFw()}
+  logEvent('INFO',`Firewall rule added: ${act} ${a[1]}`,'FIREWALL');await say(`[OK] ${act} rule installed for ${a[1]} (simulated)`,'ok');return}
+ await say(`Firewall ${t?t.name:'nebula-fw'} — status ENFORCING (stateful, default-deny)`,'info');
+ await ind('ID      ACTION  PROTO  SOURCE             DEST               PORT   HITS','dim');
+ const rows=t?t.rules.map((r,i)=>({id:'R-'+pad(i+1,3),act:r[0],proto:r[1],src:r[2],dst:r[3],port:r[4],hits:ri(40,9000)})):FWR.filter(r=>r.on);
+ for(const r of rows)await ind(`${r.id.padEnd(7)} ${r.act.padEnd(7)} ${r.proto.padEnd(6)} ${r.src.padEnd(18)} ${r.dst.padEnd(18)} ${String(r.port).padEnd(6)} ${fmt(r.hits)}`,r.act==='DENY'?'':'');
+ await say(`${rows.length} rules active · ${fmt(ri(1200,9900))} packets blocked in the last hour`,'ok')};
+CMD.connect=async(a)=>{if(!a[0]){await say('usage: connect <target>','warn');await CMD.targets();return}const t=findTarget(a[0]);if(!t){await say(`connect: unknown target '${a[0]}'`,'err');return}
+ if(connected===t.id){await say(`Already connected to ${t.name}`,'warn');return}if(busyConnect){await say('A connection sequence is already running','warn');return}
+ if(connected){await say(`Closing channel to ${TG[connected].name}`,'warn');disconnectQuiet()}
+ sel=t.id;updateAll();Snd.connect();await say(`Initiating secure channel to ${t.name} (${t.ip})`,'info');
+ for(const s of t.steps)await bar(s,ri(350,650));
+ finishConnect(t,'terminal');for(const b of t.banner)await ind(b,'ok');await say(`[OK] Session opened as ${t.user}@${t.host} — type help`,'ok')};
+CMD.disconnect=async()=>{if(!connected){await say('No active connection','warn');return}const n=TG[connected].name;disconnectQuiet();await say(`Connection to ${n} closed.`,'ok')};
+CMD.exit=CMD.disconnect;
+CMD.decrypt=async(a)=>{const t=connected&&TG[connected];if(!t){await say('decrypt: no active session — connect to a target first','warn');return}
+ const cipher=caesar(t.word,t.shift);const sub=(a[0]||'').toLowerCase();
+ if(!a.length){await say(`Locating encrypted fragment ${t.file} …`,'info');await bar('Reading block',900);
+  for(let i=0;i<3;i++)await ind(`0x${(0x4000+i*16).toString(16)}  ${hexs(16)}`,'dim');
+  await say(`Cipher block : ${cipher}`,'warn');await ind('Scheme       : rotational substitution (key unknown)');await ind('Usage        : decrypt <plaintext>   |   decrypt hint','dim');return}
+ if(sub==='hint'){HINTS[t.id]=(HINTS[t.id]||0)+1;await say(HINTS[t.id]===1?'Hint 1: every letter was moved forward along the alphabet by a fixed amount.':`Hint 2: the shift is ${t.shift}. Move each letter back ${t.shift} places.`,'info');return}
+ const ans=a.join('').toUpperCase().replace(/[^A-Z]/g,'');await bar('Verifying candidate key',900);
+ if(ans===t.word){SOLVED[t.id]=1;await say('[OK] Checksum match — fragment decrypted','ok');await say(`Recovered key phrase: ${t.word}`,'ok');await ind(`Archive note: ${t.note}`);Snd.grant();logEvent('INFO',`Fragment ${t.file} decrypted on ${t.name}`,'CRYPTO');emit({t:'decrypt',target:t.id})}
+ else{Snd.err();await say('[FAIL] Checksum mismatch — candidate key rejected','err');await ind('Try: decrypt hint','dim')}};
+CMD.typer=async()=>{setTyper(true)};
+let busyConnect=false;
+
+/* ---- terminal input ---- */
+(()=>{const inp=TERM.inp;
+ inp.addEventListener('input',renderInput);['keyup','click','select','focus'].forEach(ev=>inp.addEventListener(ev,()=>requestAnimationFrame(renderInput)));
+ inp.addEventListener('keydown',e=>{if(TERM.typer)return;
+  if(e.key==='Enter'){e.preventDefault();if(TERM.busy)return;const v=inp.value;inp.value='';renderInput();exec(v);return}
+  if(e.ctrlKey&&(e.key==='c'||e.key==='C')){e.preventDefault();if(TERM.busy)TERM.abort=true;else{echo(inp.value+'^C');inp.value='';renderInput()}return}
+  if(TERM.busy){e.preventDefault();return}
+  if(e.ctrlKey&&(e.key==='l'||e.key==='L')){e.preventDefault();TERM.out.innerHTML='';return}
+  if(e.ctrlKey&&(e.key==='u'||e.key==='U')){e.preventDefault();inp.value='';renderInput();return}
+  if(e.key==='ArrowUp'){e.preventDefault();if(!S.hist.length)return;TERM.hi=TERM.hi<0?S.hist.length-1:Math.max(0,TERM.hi-1);inp.value=S.hist[TERM.hi];requestAnimationFrame(()=>{inp.setSelectionRange(inp.value.length,inp.value.length);renderInput()});return}
+  if(e.key==='ArrowDown'){e.preventDefault();if(TERM.hi<0)return;TERM.hi++;if(TERM.hi>=S.hist.length){TERM.hi=-1;inp.value=''}else inp.value=S.hist[TERM.hi];requestAnimationFrame(()=>{inp.setSelectionRange(inp.value.length,inp.value.length);renderInput()});return}
+  if(e.key==='Tab'){e.preventDefault();const v=inp.value,parts=v.split(/\s+/);const pool=parts.length<=1?CMDS:Object.values(TG).map(t=>t.id).concat(['hint','rules','block','allow']);const w=parts[parts.length-1].toLowerCase();const m=pool.filter(x=>x.startsWith(w));
+   if(m.length===1){parts[parts.length-1]=m[0];inp.value=parts.join(' ')+' ';renderInput()}else if(m.length>1){line(m.join('   '),'dim',{ts:false,ind:true})}return}
+  if(e.key.length===1)Snd.key()});
+ TERM.body.addEventListener('click',e=>{if(TERM.typer){typerKey();return}if(window.getSelection&&String(window.getSelection()).length)return;inp.focus()});
+ $('#termClear').addEventListener('click',()=>{TERM.out.innerHTML='';inp.focus()});
+ $('#typerBtn').addEventListener('click',e=>{e.stopPropagation();setTyper(!TERM.typer)});
+})();
+/* ---- hacker typer ---- */
+const CODE=String.raw`// NEBULA simulated payload loader — fictional demo code
+#include <nebula/kernel.h>
+#define MAX_NODES 0x40
+static uint32_t session_key[8] = {0xDEADBEEF, 0x1337C0DE};
+struct node_t { char host[32]; uint32_t addr; bool alive; };
+int init_uplink(const char *target, size_t len) {
+    if (len > MAX_NODES) return -1;
+    for (int i = 0; i < 16; i++) {
+        session_key[i % 8] ^= rotl32(0x9E3779B9, i);
+    }
+    printf("handshake -> %s [ok]\n", target);
+    return 0;
+}
+void drain_buffer(uint8_t *buf, size_t n) {
+    while (n--) { *buf++ = prng_next() & 0xFF; }
+}
+# --- telemetry decoder ---
+def decode_frame(frame, key=0x7F3A):
+    header = frame[:4]
+    payload = [b ^ key for b in frame[4:]]
+    if checksum(payload) != header[3]:
+        raise ValueError("crc mismatch")
+    return {"seq": header[0], "data": payload}
+class UplinkSession:
+    def __init__(self, node, port=4433):
+        self.node = node
+        self.state = "NEGOTIATING"
+    async def negotiate(self):
+        await self.send("HELLO nebula/4.2")
+        self.state = "SECURE"
+async function routePackets(queue) {
+  for (const pkt of queue) { if (pkt.ttl > 0) await forward(pkt, "10.77.0.1"); }
+}
+fn scan_ports(host: &str, range: (u16, u16)) -> Vec<u16> {
+    let mut open = Vec::new();
+    for p in range.0..range.1 { if probe(host, p) { open.push(p); } }
+    open
+}
+mov eax, 0x7C00
+xor ebx, ebx
+call decrypt_block
+cmp eax, 0xFFFF
+jne retry_handshake
+// signature verified — channel established
+`;
+function setTyper(on){TERM.typer=on;$('#typerBtn').classList.toggle('on',on);$('#typerHud').hidden=!on;$('#promptWrap').style.display=on?'none':'';
+ if(on){TERM.buf='';TERM.tl=document.createElement('div');TERM.tl.className='tl code';TERM.out.appendChild(TERM.tl);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();logEvent('INFO','Typer mode engaged','TERMINAL');typerHud()}
+ else{if(TERM.tl){TERM.tl.innerHTML=hlCode(TERM.buf);TERM.tl=null}TERM.buf='';if(view==='terminal'||view==='dashboard')TERM.inp.focus();renderPrompt()}scrollEnd()}
+function typerHud(){$('#typerCount').textContent=`· ${fmt(TERM.typed)} chars`}
+function typerKey(){const n=ri(2,5);for(let i=0;i<n;i++){const ch=CODE[TERM.cp%CODE.length];TERM.cp++;
+  if(ch==='\n'){TERM.tl.innerHTML=hlCode(TERM.buf)||' ';TERM.buf='';TERM.tl=document.createElement('div');TERM.tl.className='tl code';TERM.out.appendChild(TERM.tl);while(TERM.out.children.length>700)TERM.out.firstChild.remove()}else TERM.buf+=ch}
+ TERM.tl.innerHTML=hlCode(TERM.buf)+'<span class="cur"><span> </span></span>';TERM.typed+=n;typerHud();scrollEnd();Snd.key();
+ if(TERM.typed-TERM.lastGrant>=1400){TERM.lastGrant=TERM.typed;fxAccess('ACCESS GRANTED','Root shell opened on simulated node ('+hexs(2).replace(' ','')+')');logEvent('INFO','Typer sequence accepted — simulated root shell','TERMINAL');if(S.typerGrants<10){S.typerGrants++;addXp(10,'Typer challenge');}}}
+const isMod=e=>e.ctrlKey||e.metaKey||e.altKey||['Shift','Control','Alt','Meta','CapsLock'].includes(e.key);
+document.addEventListener('keydown',e=>{if($('#app').hidden)return;
+ if(TERM.typer){if(e.key==='Escape'){e.preventDefault();setTyper(false);return}if(isMod(e)||!($('#termPanel').offsetParent))return;if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName)&&document.activeElement!==TERM.inp)return;e.preventDefault();typerKey();return}
+ if(e.altKey&&/^[1-8]$/.test(e.key)){e.preventDefault();showView(VIEWS[+e.key-1]);return}
+ if(($('#termPanel').offsetParent)&&document.activeElement===document.body&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key.length===1)TERM.inp.focus()});
+
+/* ================= CONNECTION / TARGETS ================= */
+function updateAll(){const t=connected&&TG[connected],s=sel&&TG[sel];
+ $('#tbTarget').textContent=s?s.name:'NONE';$('#chipTarget').classList.toggle('has',!!s);
+ $('#tbLink').textContent=t?'ESTABLISHED':'IDLE';$('#chipLink').className='chip link'+(t?' up':'');
+ $('#stLink').textContent=t?'ESTABLISHED':'IDLE';$('#stLink').className='sv '+(t?'ok':'');$('#stLinkSub').textContent=t?`${t.user}@${t.host} · ${t.ip}`:'no active channel';
+ $('#stTgt').textContent=s?s.name:'NONE';$('#stTgtSub').textContent=s?`${s.type} · SEC ${s.sec}/5`:'run: targets';
+ renderPrompt();renderTargetCards()}
+function finishConnect(t,via){connected=t.id;sel=t.id;logEvent('INFO',`Secure channel established with ${t.name} (${t.ip}) via ${via}`,'LINK');updateAll();fxAccess('ACCESS GRANTED',t.name+' · '+t.ip);emit({t:'connect',target:t.id})}
+function disconnectQuiet(){const n=connected&&TG[connected];connected=null;if(n)logEvent('INFO','Channel to '+n.name+' closed','LINK');stopTargetUI();if(view==='target')showView('targets');updateAll()}
+function secBlocks(n){return `<span class="sec-b">${Array.from({length:5},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`}
+function renderTargetCards(){const el=$('#tgCards');if(!el)return;el.innerHTML=Object.values(TG).map(t=>{const d=t.obj.filter(o=>S.obj[o[0]]).length,c=connected===t.id;
+ return `<article class="tcard ${sel===t.id?'sel':''}" style="--ac:${t.ac}" data-t="${t.id}"><div class="tc-top"><span class="tc-tag">${t.tag}</span><div><h3>${t.name}</h3><span class="tc-type">${t.type}</span></div><span class="tc-st ${c?'on':''}">${c?'CONNECTED':'OFFLINE'}</span></div><p>${t.desc}</p>
+ <div class="tc-meta"><div><span>SECURITY</span>${secBlocks(t.sec)}<b>${t.secLabel}</b></div><div><span>ADDRESS</span><b>${t.ip}</b></div><div><span>OBJECTIVES</span><b>${d}/3</b></div></div>
+ <ul class="olist">${t.obj.map(o=>`<li class="${S.obj[o[0]]?'done':''}"><i></i>${esc(o[1])}</li>`).join('')}</ul>
+ <div class="tc-act"><button class="btn" data-sel="${t.id}">SELECT</button><button class="btn pri" data-go="${t.id}">${c?'OPEN INTERFACE':'CONNECT'}</button></div></article>`}).join('')}
+async function connectFromUI(id){const t=TG[id];if(connected===id){openTarget(id);return}if(busyConnect)return;busyConnect=true;
+ try{if(connected)disconnectQuiet();sel=id;updateAll();
+  const o=document.createElement('div');o.className='fx in modal conn';o.style.setProperty('--ac',t.ac);o.innerHTML=`<div class="dialog conn-box"><div class="fx-kicker">ESTABLISHING SECURE CHANNEL</div><h3>${t.name}</h3><div class="conn-ip">${t.ip} · ${t.domain}</div><div class="conn-steps" id="cSteps"></div><div class="bar big"><i id="cBar"></i></div><div class="conn-pct" id="cPct">0%</div></div>`;$('#fxLayer').appendChild(o);Snd.connect();
+  const box=$('#cSteps',o);for(let i=0;i<t.steps.length;i++){const d=document.createElement('div');d.innerHTML=`<span class="ts">[${clock()}]</span> ${esc(t.steps[i])} <em>…</em>`;box.appendChild(d);
+   const p=Math.round((i+1)/t.steps.length*100);$('#cBar',o).style.width=p+'%';$('#cPct',o).textContent=p+'%';await sleep(S.settings.anim?ri(280,520)*speedMul()+60:40);d.querySelector('em').outerHTML='<span class="h-ok">[OK]</span>'}
+  await sleep(250);o.remove();finishConnect(t,'control panel');line(`Link established with ${t.name} via control panel`,'ok');t.banner.forEach(b=>line(b,'ok',{ts:false,ind:true}));openTarget(id)}
+ finally{busyConnect=false}}
+
+/* ---- target interfaces ---- */
+let tTimers=[],tRaf=0,tToken=0;
+function stopTargetUI(){tTimers.forEach(clearInterval);tTimers=[];cancelAnimationFrame(tRaf);tToken++}
+function every(fn,ms){fn();tTimers.push(setInterval(fn,ms))}
+function refreshTargetObj(){const t=TG[connected];if(!t)return;const el=$('#tgObj');if(el)el.innerHTML=t.obj.map(o=>`<li class="${S.obj[o[0]]?'done':''}"><i></i>${esc(o[1])}<em>+75 XP</em></li>`).join('')}
+const ASCII={orbital:String.raw`   .-.   ORBITAL
+  (   )  A R C H I V E
+   '-'`,northstar:String.raw` _  _ ___
+| \| / __|  NORTHSTAR
+| .' \__ \  BANK PLC
+|_|\_|___/`,citadel:String.raw`  /\_/\_/\  CITADEL
+ |  _  _  | G R I D
+ |_|_||_|_|`,atlas:String.raw` ATLAS/OS  9.1
+ ===========
+ MAINFRAME`};
+function shell(t,main){return `<div class="tshell th-${t.id}" style="--ac:${t.ac}"><div class="thead"><pre class="tlogo">${esc(ASCII[t.id])}</pre><div class="tinfo"><h2>${t.name}</h2><span>${t.type} · ${t.domain}</span></div><div class="tsec"><span>SECURITY LEVEL</span>${secBlocks(t.sec)}<b>${t.secLabel}</b></div><div class="tbtns"><button class="btn" data-tback>&lsaquo; TARGETS</button><button class="btn danger" data-tdisc>DISCONNECT</button></div></div>
+ <div class="tbody"><div class="tmain">${main}</div><aside class="tside"><section class="panel"><div class="ph"><span class="pt">SYSTEM INFORMATION</span></div><div class="pb"><div class="kvs col">
+ <div><span>HOST</span><b>${t.host}</b></div><div><span>ADDRESS</span><b>${t.ip}</b></div><div><span>OS</span><b>${t.os}</b></div><div><span>LOCATION</span><b>${t.loc}</b></div><div><span>UPTIME</span><b>${t.uptime}</b></div><div><span>SESSION</span><b>${t.user}@${t.host}</b></div></div></div></section>
+ <section class="panel"><div class="ph"><span class="pt">TARGET OBJECTIVES</span></div><div class="pb"><ul class="olist" id="tgObj"></ul><p class="dim sm">Tip: use the terminal for scan, trace, firewall, decrypt.</p></div></section></aside></div></div>`}
+function openTarget(id){const t=TG[id];if(!t||connected!==id)return;stopTargetUI();const st=$('#tgStage');
+ const mains={orbital:uiOrbital,northstar:uiNorthstar,citadel:uiCitadel,atlas:uiAtlas};const m=mains[id](t);st.innerHTML=shell(t,m.html);refreshTargetObj();showView('target');m.init(t,tToken)}
+const FILES={'telemetry_0417.log':`# OA-SAT-1 TELEMETRY  epoch 2026-322
+T+00:00:01  BUS_V=28.1  BATT=94%  TEMP=21.4C
+T+00:00:02  ATT  roll=0.02 pitch=-0.01 yaw=0.00
+T+00:00:03  RF   margin=4.8dB  doppler=+1.84kHz
+T+00:00:04  WARN gyro-2 drift 0.004 deg/s
+-- 312 more frames in /archive/tm/0417`,'ephemeris.dat':`# EPHEMERIS TABLE (fictional)
+OA-SAT-1  a=7012.4km e=0.0012 i=51.6deg
+OA-SAT-2  a=7391.0km e=0.0030 i=63.4deg
+OA-SAT-3  a=26560km  e=0.0100 i=55.0deg`,'uplink_keys.enc':`ENCRYPTED  (see terminal: decrypt)
+0x4000  ${'4f 41 2d 4b 45 59 00 ff 7a 31 9c 02 e8 11 5d 20'}
+0x4010  ${'b1 6c 0d 77 3f a2 19 c4 90 08 6e d5 22 f3 4a 01'}`,'mission_notes.txt':`MISSION NOTES — GROUND SEGMENT
+- SAT-3 in safe mode until key rotation.
+- Archive shard 14 re-verified.
+- Do not schedule uplink during eclipse window.`,'anomaly_report.md':`# Anomaly report AR-2291
+Unscheduled uplink request from gs-relay-9
+Status: under review  Severity: medium`};
+function uiOrbital(t){const html=`<div class="tgrid"><section class="panel span2"><div class="ph"><span class="pt">ORBIT TRACKER</span><span class="pm">LIVE · 3 ASSETS</span></div><div class="pb nopad"><canvas id="orbCv" class="cv" style="height:290px"></canvas></div></section>
+ <section class="panel"><div class="ph"><span class="pt">TELEMETRY</span></div><div class="pb"><div class="kvs col" id="orbTm"></div></div></section>
+ <section class="panel span3"><div class="ph"><span class="pt">ARCHIVE VOLUME ${t.path}</span><span class="pm">READ-ONLY</span></div><div class="pb filebox"><ul class="files" id="orbFiles">${Object.keys(FILES).map(f=>`<li data-f="${f}">${f}</li>`).join('')}</ul><pre class="viewer" id="orbView">Select a file to open it in the viewer.</pre></div></section></div>`;
+ return{html,init(t,tok){const cv=$('#orbCv');const sats=[{n:'OA-SAT-1',a:.42,e:.55,tilt:.5,sp:.5,ph:0},{n:'OA-SAT-2',a:.62,e:.7,tilt:-.4,sp:.3,ph:2},{n:'OA-SAT-3',a:.82,e:.85,tilt:.15,sp:.18,ph:4}];let time=0,prev=performance.now();
+  function frame(now){if(tok!==tToken)return;const dt=Math.min(.05,(now-prev)/1000);prev=now;if(S.settings.anim)time+=dt;const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(w&&h){if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const cx=w/2,cy=h/2,R=Math.min(w,h)*.5;
+   c.strokeStyle=rgba(t.ac,.1);c.lineWidth=1;for(let i=1;i<=4;i++){c.beginPath();c.arc(cx,cy,R*i/4*.9,0,6.283);c.stroke()}c.beginPath();c.moveTo(cx-R*1.5,cy);c.lineTo(cx+R*1.5,cy);c.moveTo(cx,cy-R);c.lineTo(cx,cy+R);c.stroke();
+   c.beginPath();c.arc(cx,cy,R*.2,0,6.283);c.fillStyle=rgba(t.ac,.12);c.fill();c.strokeStyle=rgba(t.ac,.7);c.stroke();c.beginPath();c.ellipse(cx,cy,R*.2,R*.07,0,0,6.283);c.stroke();c.beginPath();c.ellipse(cx,cy,R*.07,R*.2,0,0,6.283);c.stroke();
+   const gs={x:cx+Math.cos(.8)*R*.2,y:cy+Math.sin(.8)*R*.2};c.fillStyle=COL.a;c.fillRect(gs.x-2,gs.y-2,4,4);
+   sats.forEach(s=>{const rx=s.a*R*1.5,ry=s.a*R*.85*s.e+10;c.save();c.translate(cx,cy);c.rotate(s.tilt);c.strokeStyle=rgba(t.ac,.28);c.setLineDash([3,5]);c.beginPath();c.ellipse(0,0,rx,ry,0,0,6.283);c.stroke();c.setLineDash([]);const ang=time*s.sp+s.ph,px=Math.cos(ang)*rx,py=Math.sin(ang)*ry;c.restore();
+    const cs=Math.cos(s.tilt),sn=Math.sin(s.tilt),X=cx+px*cs-py*sn,Y=cy+px*sn+py*cs;
+    const vis=Math.hypot(X-gs.x,Y-gs.y)<R*.95;if(vis){c.strokeStyle=rgba(t.ac,.35);c.setLineDash([2,3]);c.beginPath();c.moveTo(gs.x,gs.y);c.lineTo(X,Y);c.stroke();c.setLineDash([])}
+    c.beginPath();c.arc(X,Y,4,0,6.283);c.fillStyle=t.ac;c.fill();c.beginPath();c.arc(X,Y,9+Math.sin(time*3+s.ph)*2,0,6.283);c.strokeStyle=rgba(t.ac,.3);c.stroke();c.fillStyle=COL.tx2;c.font='10px ui-monospace,Consolas,monospace';c.fillText(s.n+(vis?'  LINK':'  –'),X+12,Y+3)})}
+   tRaf=requestAnimationFrame(frame)}tRaf=requestAnimationFrame(frame);
+  every(()=>{$('#orbTm').innerHTML=[['BUS VOLTAGE',(28+rnd(-.3,.3)).toFixed(2)+' V'],['BATTERY',ri(92,96)+' %'],['ALTITUDE',(612+rnd(-2,2)).toFixed(1)+' km'],['RF MARGIN',(4.8+rnd(-.6,.6)).toFixed(1)+' dB'],['DOPPLER','+'+(1.84+rnd(-.05,.05)).toFixed(2)+' kHz'],['FRAME RATE',ri(118,126)+' fps'],['STORAGE','38.2 / 64 TB']].map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')},1000);
+  $('#orbFiles').addEventListener('click',e=>{const li=e.target.closest('li');if(!li)return;$$('#orbFiles li').forEach(x=>x.classList.toggle('on',x===li));$('#orbView').textContent=FILES[li.dataset.f];Snd.click();emit({t:'ui',n:'file',f:li.dataset.f})})}}}
+function uiNorthstar(t){const html=`<div class="tgrid"><section class="panel span3"><div class="ph"><span class="pt">LIVE TRANSACTION LEDGER</span><span class="pm">RISK ≥ 75 = ANOMALY · click ESCALATE</span></div><div class="pb nopad"><div class="tscroll tall"><table class="tbl" id="nsTbl"><thead><tr><th>TXN</th><th>TIME</th><th>ACCOUNT</th><th>AMOUNT</th><th>CHANNEL</th><th>RISK</th><th></th></tr></thead><tbody id="nsBody"></tbody></table></div></div></section>
+ <section class="panel span3"><div class="ph"><span class="pt">VAULT &amp; SETTLEMENT</span></div><div class="pb"><div class="kvs row" id="nsMeta"></div></div></section></div>`;
+ return{html,init(t,tok){let seq=4400;const body=$('#nsBody');const chans=['CARD','WIRE','ACH','ATM','MOBILE'];
+  function addTx(forceAnom){const an=forceAnom||Math.random()<.2,risk=an?ri(78,97):ri(3,58),id='TX-'+(seq++),amt=an?ri(9000,49000):ri(12,3400);const tr=document.createElement('tr');tr.className=an?'anom':'';tr.dataset.risk=risk;
+   tr.innerHTML=`<td>${id}</td><td>${clock()}</td><td>**** ${ri(1000,9999)}</td><td class="r">£${fmt(amt)}.${pad(ri(0,99))}</td><td>${pick(chans)}</td><td><span class="risk ${risk>=75?'hi':risk>=50?'mid':''}">${risk}</span></td><td><button class="btn sm" data-esc>ESCALATE</button></td>`;body.insertBefore(tr,body.firstChild);while(body.children.length>16)body.lastChild.remove()}
+  for(let i=0;i<9;i++)addTx(i===3||i===6);every(()=>addTx(false),1800);
+  body.addEventListener('click',e=>{const b=e.target.closest('[data-esc]');if(!b)return;const tr=b.closest('tr'),r=+tr.dataset.risk;if(tr.classList.contains('flagged'))return;if(r>=75){tr.classList.add('flagged');b.outerHTML='<em class="h-ok">ESCALATED</em>';toast('Escalated to fraud desk','High-risk transaction frozen (simulated)');Snd.ok();logEvent('WARN','Transaction escalated to fraud desk','NORTHSTAR');emit({t:'ui',n:'flag',anomaly:true})}else{toast('False positive logged','Risk score below threshold','warn');Snd.err();b.disabled=true}});
+  every(()=>{$('#nsMeta').innerHTML=[['RESERVE VAULT','SEALED'],['SETTLEMENT QUEUE',fmt(ri(1240,1330))],['INTERBANK LINK','ONLINE'],['HSM CLUSTER','3/3 ONLINE'],['FRAUD ENGINE','ACTIVE'],['DR REPLICATION','LAG '+ri(70,110)+'s']].map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')},2000)}}}
+function uiCitadel(t){const names=['Harbor North','Riverside','Old Quarter','Eastgate','Ironworks','Highfield','Westbay','Southfork','Millpond','Cedar Hill','Airport','Dockside'];
+ const html=`<div class="tgrid"><section class="panel span3"><div class="ph"><span class="pt">GRID OVERVIEW</span><span class="pm" id="cgWarn"><span class="c-a">DRILL MODE</span></span></div><div class="pb"><div class="cg-top" id="cgTop"></div></div></section>
+ <section class="panel span3"><div class="ph"><span class="pt">SUBSTATIONS</span><span class="pm">click a breaker to operate (simulated)</span></div><div class="pb"><div class="ss-grid" id="ssGrid"></div></div></section></div>`;
+ return{html,init(t,tok){const ss=names.map((n,i)=>({id:'SS-'+pad(i+1),n,load:ri(35,88),open:false}));const grid=$('#ssGrid');
+  function draw(){grid.innerHTML=ss.map((s,i)=>`<div class="ss ${s.open?'open':s.load>82?'hot':''}"><div class="ss-h"><b>${s.id}</b><span>${s.n}</span></div><div class="ss-load"><i style="width:${s.open?0:s.load}%"></i></div><div class="ss-f"><span>${s.open?'0':Math.round(s.load*3.1)} MW</span><button class="btn sm ${s.open?'danger':''}" data-b="${i}">${s.open?'OPEN':'CLOSED'}</button></div></div>`).join('');
+   const tot=ss.reduce((a,s)=>a+(s.open?0:s.load*3.1),0),no=ss.filter(s=>s.open).length,f=50+rnd(-.03,.03)-no*.12;
+   $('#cgTop').innerHTML=[['FREQUENCY',f.toFixed(2)+' Hz'],['TOTAL LOAD',fmt(Math.round(tot))+' MW'],['BREAKERS OPEN',no+' / 12'],['RESERVE MARGIN',Math.max(2,14-no*3)+' %'],['STATE',no>=3?'CASCADE RISK':'STABLE']].map(r=>`<div><span>${r[0]}</span><b class="${r[1]==='CASCADE RISK'?'c-r':''}">${r[1]}</b></div>`).join('')}
+  every(()=>{ss.forEach(s=>{if(!s.open)s.load=clamp(s.load+ri(-4,4),20,95)});draw()},1500);
+  grid.addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const s=ss[+b.dataset.b];s.open=!s.open;Snd.click();logEvent(s.open?'WARN':'INFO',`${s.id} breaker ${s.open?'OPENED':'CLOSED'} (drill)`,'CITADEL');toast(`${s.id} breaker ${s.open?'opened':'closed'}`,s.open?'Load shed — drill':'Load restored',s.open?'warn':'ok');draw();emit({t:'ui',n:'breaker',open:s.open})})}}}
+function uiAtlas(t){const html=`<div class="tgrid"><section class="panel span2"><div class="ph"><span class="pt">JOB QUEUE — JES2</span><span class="pm">HOLD / RELEASE</span></div><div class="pb nopad"><table class="tbl atl"><thead><tr><th>JOBNAME</th><th>STEP</th><th>CPU</th><th>STATUS</th><th></th></tr></thead><tbody id="atJobs"></tbody></table></div></section>
+ <section class="panel"><div class="ph"><span class="pt">STORAGE MAP</span></div><div class="pb"><div class="memgrid" id="atMem"></div></div></section>
+ <section class="panel span3"><div class="ph"><span class="pt">OPERATOR CONSOLE ${t.host}</span></div><div class="pb nopad"><pre class="atconsole" id="atCon"></pre></div></section></div>`;
+ return{html,init(t,tok){const jobs=['PAYRL07','LEDGR11','BKUP-A2','CRYPT03','REPORT9','SYNC-X1'].map(n=>({n,step:'STEP0'+ri(1,4),cpu:ri(1,90)/10,hold:false}));const jb=$('#atJobs');
+  function dj(){jb.innerHTML=jobs.map((j,i)=>`<tr><td>${j.n}</td><td>${j.step}</td><td>${j.hold?j.cpu.toFixed(1):(j.cpu+=rnd(0,.4)).toFixed(1)}s</td><td class="${j.hold?'c-a':'c-g'}">${j.hold?'HELD':'RUNNING'}</td><td><button class="btn sm" data-j="${i}">${j.hold?'RELEASE':'HOLD'}</button></td></tr>`).join('')}
+  every(dj,1500);jb.addEventListener('click',e=>{const b=e.target.closest('[data-j]');if(!b)return;const j=jobs[+b.dataset.j];j.hold=!j.hold;Snd.click();logEvent('INFO',`Job ${j.n} ${j.hold?'HELD':'RELEASED'} by operator`,'ATLAS');con(`$HASP100 ${j.n} ${j.hold?'ON HOLD':'RELEASED'} BY SYSOPR`);dj();emit({t:'ui',n:'job',hold:j.hold})});
+  const mem=$('#atMem');mem.innerHTML=Array.from({length:96},()=>'<i></i>').join('');every(()=>{$$('#atMem i').forEach(c=>{if(Math.random()<.12)c.className=pick(['','a','b','c'])})},900);
+  const con=m=>{const p=$('#atCon');if(!p)return;p.textContent+=m+'\n';const L=p.textContent.split('\n');if(L.length>40)p.textContent=L.slice(-40).join('\n');p.scrollTop=p.scrollHeight};
+  t.banner.forEach(b=>con(b));const msgs=['IEF403I {J} - STARTED - TIME={T}','IEF404I {J} - ENDED - TIME={T}','IEC070I 203-204,ATLAS01,{J},SYS1.LINKLIB','$HASP165 {J} ENDED AT ATLAS01 MAXCC=0000','IRA100E SQA SHORTAGE DETECTED','IEE136I LOCAL TIME={T}'];
+  every(()=>con(pick(msgs).replace('{J}',pick(jobs).n).replace('{T}',clock().replace(/:/g,'.'))),1600)}}}
+
+/* ================= GRAPH MAP ENGINE ================= */
+function drawIcon(c,type,x,y,col){c.save();c.translate(x,y);c.strokeStyle=col;c.lineWidth=1.4;c.lineCap='round';c.lineJoin='round';c.beginPath();
+ switch(type){
+  case 'server':c.rect(-8,-9,16,5);c.rect(-8,-3,16,5);c.rect(-8,3,16,5);c.moveTo(-5,-6.5);c.lineTo(-3,-6.5);c.moveTo(-5,-.5);c.lineTo(-3,-.5);c.moveTo(-5,5.5);c.lineTo(-3,5.5);break;
+  case 'desktop':c.rect(-9,-8,18,12);c.moveTo(-4,9);c.lineTo(4,9);c.moveTo(0,4);c.lineTo(0,9);break;
+  case 'laptop':c.rect(-7,-8,14,9);c.moveTo(-10,5);c.lineTo(10,5);c.moveTo(-8,1);c.lineTo(-10,5);c.moveTo(8,1);c.lineTo(10,5);break;
+  case 'router':c.rect(-9,1,18,7);c.moveTo(-5,1);c.lineTo(-7,-8);c.moveTo(5,1);c.lineTo(7,-8);c.moveTo(-4,4.5);c.lineTo(-2,4.5);c.moveTo(1,4.5);c.lineTo(3,4.5);break;
+  case 'phone':c.rect(-5,-9,10,18);c.moveTo(-1.5,6);c.lineTo(1.5,6);break;
+  case 'tablet':c.rect(-8,-7,16,14);c.moveTo(-1.5,5);c.lineTo(1.5,5);break;
+  case 'tv':c.rect(-10,-7,20,13);c.moveTo(-5,9);c.lineTo(5,9);break;
+  case 'printer':c.rect(-6,-9,12,6);c.rect(-9,-3,18,8);c.rect(-5,2,10,7);break;
+  case 'firewall':c.rect(-9,-8,18,16);c.moveTo(-9,-3);c.lineTo(9,-3);c.moveTo(-9,3);c.lineTo(9,3);c.moveTo(-2,-8);c.lineTo(-2,-3);c.moveTo(3,-3);c.lineTo(3,3);c.moveTo(-3,3);c.lineTo(-3,8);break;
+  default:c.arc(0,0,9,0,6.283);c.moveTo(-9,0);c.lineTo(9,0);c.ellipse(0,0,4,9,0,0,6.283)}
+ c.stroke();c.restore()}
+const GMAPS=[];
+class GMap{
+ constructor(cv,o){this.cv=cv;this.nodes=o.nodes;this.edges=o.edges;this.sel=null;this.hover=null;this.packets=[];this.pulses=[];this.drag=!!o.drag;this.onSelect=o.onSelect||(()=>{});this.t=0;this.w=0;this.h=0;this.dn=null;this.moved=false;
+  this.map=Object.fromEntries(this.nodes.map(n=>[n.id,n]));GMAPS.push(this);this.bind()}
+ size(){const dpr=window.devicePixelRatio||1,w=this.cv.clientWidth,h=this.cv.clientHeight;if(!w||!h)return false;if(this.cv.width!==Math.round(w*dpr)||this.cv.height!==Math.round(h*dpr)){this.cv.width=Math.round(w*dpr);this.cv.height=Math.round(h*dpr)}this.w=w;this.h=h;this.dpr=dpr;return true}
+ P(n){return{x:n.x*this.w,y:n.y*this.h}}
+ pulse(id,col){this.pulses.push({id,t:0,col:col||COL.g})}
+ live(n){return n.status==='on'||n.status==='warn'}
+ step(dt){this.t+=dt;for(const e of this.edges){const a=this.map[e.a],b=this.map[e.b];if(!this.live(a)||!this.live(b)||e.cut)continue;if(Math.random()<dt*(e.act||1.4)){const sus=(a.status==='warn'||b.status==='warn');const r=Math.random();this.packets.push({e,t:0,d:Math.random()<.5?1:-1,sp:rnd(.3,.7),col:sus&&r<.35?COL.a:r<.03?COL.r:COL.g})}}
+  this.packets.forEach(p=>p.t+=p.sp*dt);this.packets=this.packets.filter(p=>p.t<1);this.pulses.forEach(p=>p.t+=dt*1.2);this.pulses=this.pulses.filter(p=>p.t<1)}
+ draw(){if(!this.size())return;const c=this.cv.getContext('2d');c.setTransform(this.dpr,0,0,this.dpr,0,0);c.clearRect(0,0,this.w,this.h);
+  c.strokeStyle='rgba(75,216,139,.045)';c.lineWidth=1;for(let x=0;x<this.w;x+=40){c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,this.h);c.stroke()}for(let y=0;y<this.h;y+=40){c.beginPath();c.moveTo(0,y+.5);c.lineTo(this.w,y+.5);c.stroke()}
+  for(const e of this.edges){const a=this.P(this.map[e.a]),b=this.P(this.map[e.b]);const on=this.live(this.map[e.a])&&this.live(this.map[e.b])&&!e.cut;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.lineWidth=on?1.2:1;c.setLineDash(on?[]:[4,5]);c.strokeStyle=e.cut?rgba(COL.r,.6):on?rgba(COL.g,.28):'rgba(120,130,130,.2)';c.stroke();c.setLineDash([])}
+  for(const p of this.packets){const a=this.P(this.map[p.e.a]),b=this.P(this.map[p.e.b]),t=p.d>0?p.t:1-p.t,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;c.fillStyle=p.col;c.shadowColor=p.col;c.shadowBlur=6;c.fillRect(x-1.8,y-1.8,3.6,3.6);c.shadowBlur=0}
+  c.font='10px ui-monospace,Consolas,monospace';c.textAlign='center';
+  for(const n of this.nodes){const p=this.P(n),st=n.status,col=st==='off'?'#4a5454':st==='warn'?COL.a:st==='iso'?COL.r:COL.g;c.globalAlpha=st==='off'?.55:1;
+   if(st==='warn'&&S.settings.anim){c.beginPath();c.arc(p.x,p.y,24+Math.sin(this.t*4)*3,0,6.283);c.strokeStyle=rgba(COL.a,.35);c.stroke()}
+   c.beginPath();c.arc(p.x,p.y,21,0,6.283);c.fillStyle=this.hover===n?'#1d2526':COL.bg3;c.fill();c.lineWidth=this.sel===n?2:1.2;c.strokeStyle=this.sel===n?'#e8eded':rgba(col,.8);c.stroke();
+   drawIcon(c,n.type,p.x,p.y,st==='off'?'#7c8888':col);
+   c.beginPath();c.arc(p.x+15,p.y-15,3.2,0,6.283);c.fillStyle=col;c.fill();
+   c.fillStyle=this.sel===n?'#e8eded':COL.tx2;c.fillText(n.label,p.x,p.y+36);c.fillStyle=COL.tx3;c.fillText(n.sub||'',p.x,p.y+48);
+   if(st==='off'){c.strokeStyle=COL.r;c.beginPath();c.moveTo(p.x-6,p.y-6);c.lineTo(p.x+6,p.y+6);c.moveTo(p.x+6,p.y-6);c.lineTo(p.x-6,p.y+6);c.stroke()}c.globalAlpha=1}
+  for(const pl of this.pulses){const n=this.map[pl.id];if(!n)continue;const p=this.P(n);c.beginPath();c.arc(p.x,p.y,21+pl.t*34,0,6.283);c.strokeStyle=rgba(pl.col,1-pl.t);c.lineWidth=2;c.stroke()}
+  c.textAlign='left'}
+ at(ev){const r=this.cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;for(let i=this.nodes.length-1;i>=0;i--){const p=this.P(this.nodes[i]);if(Math.hypot(p.x-x,p.y-y)<24)return{n:this.nodes[i],x,y}}return{n:null,x,y}}
+ bind(){const cv=this.cv;cv.style.touchAction='none';
+  cv.addEventListener('pointerdown',e=>{const h=this.at(e);this.moved=false;if(h.n){this.dn=h.n;try{cv.setPointerCapture(e.pointerId)}catch(_){}}});
+  cv.addEventListener('pointermove',e=>{const h=this.at(e);if(this.dn&&this.drag){this.moved=true;this.dn.x=clamp(h.x/this.w,.05,.95);this.dn.y=clamp(h.y/this.h,.06,.86);this.draw();return}this.hover=h.n;cv.style.cursor=h.n?'pointer':'default';if(!S.settings.anim)this.draw()});
+  cv.addEventListener('pointerup',e=>{const h=this.at(e);if(this.dn&&!this.moved&&h.n===this.dn){this.sel=h.n;this.onSelect(h.n);this.draw()}this.dn=null});
+  cv.addEventListener('pointerleave',()=>{this.hover=null})}
+}
+let lastFrame=performance.now(),fpsN=0,fpsT=0;
+function loop(now){const dt=Math.min(.06,(now-lastFrame)/1000);lastFrame=now;fpsN++;fpsT+=dt;if(fpsT>=1){$('#sbFps').textContent=Math.round(fpsN/fpsT)+' fps';fpsN=0;fpsT=0}
+ if(S.settings.anim&&!$('#app').hidden)GMAPS.forEach(m=>{if(m.cv.offsetParent){m.step(dt);m.draw()}});requestAnimationFrame(loop)}
+
+/* ================= MY NETWORK (SIMULATED) ================= */
+const DEVICES=[
+ {id:'rt',name:'HomeGate AX6000',type:'router',kind:'Router',ip:'192.168.1.1',mac:'02:4E:42:00:00:01',vendor:'Nimbus Networks (fictional)',os:'NimbusOS 3.1.4',link:'WAN 2.5 Gbps',svc:['DHCP','DNS relay','Stateful firewall','UPnP (disabled)'],x:.5,y:.42,base:420},
+ {id:'pc',name:'DESKTOP-ORION',type:'desktop',kind:'Desktop computer',ip:'192.168.1.10',mac:'02:4E:42:00:10:0A',vendor:'Helix Systems (fictional)',os:'Windows-like 11 (fictional build)',link:'Ethernet 1 Gbps',svc:['File sharing (LAN)','Remote desktop (off)'],x:.13,y:.55,base:260},
+ {id:'lt',name:'LAPTOP-VEGA',type:'laptop',kind:'Laptop',ip:'192.168.1.12',mac:'02:4E:42:00:10:0C',vendor:'Arcadia Devices (fictional)',os:'LinuxLite 24.04 (sim)',link:'Wi-Fi 6 · 5 GHz · −48 dBm',svc:['SSH client','Media sync'],x:.26,y:.84,base:180},
+ {id:'ph',name:'PHONE-LYRA',type:'phone',kind:'Smartphone',ip:'192.168.1.21',mac:'02:4E:42:00:10:15',vendor:'Pulse Mobile (fictional)',os:'PulseOS 15',link:'Wi-Fi 6 · 5 GHz · −55 dBm',svc:['Cloud backup','Push services'],x:.43,y:.9,base:90},
+ {id:'tb',name:'TAB-ARGO',type:'tablet',kind:'Tablet',ip:'192.168.1.24',mac:'02:4E:42:00:10:18',vendor:'Pulse Mobile (fictional)',os:'PulseOS 15',link:'Wi-Fi 5 · 2.4 GHz · −62 dBm',svc:['Streaming','Reading sync'],x:.6,y:.9,base:70},
+ {id:'tv',name:'TV-HELIOS',type:'tv',kind:'Smart television',ip:'192.168.1.30',mac:'02:4E:42:00:10:1E',vendor:'Lumen Vision (fictional)',os:'LumenCast 8.2',link:'Wi-Fi 5 · 5 GHz · −58 dBm',svc:['Streaming (HTTPS)','Screen cast receiver'],x:.77,y:.82,base:900},
+ {id:'pr',name:'PRN-CEPHEUS',type:'printer',kind:'Network printer',ip:'192.168.1.40',mac:'02:4E:42:00:10:28',vendor:'InkWorks (fictional)',os:'Firmware 2.9.1',link:'Wi-Fi 4 · 2.4 GHz · −66 dBm',svc:['IPP printing','Web admin (LAN only)'],x:.89,y:.55,base:12}
+].map(d=>({...d,up:true,rx:0,tx:0,tot:ri(200,2400),hist:Array.from({length:30},()=>ri(1,20)),since:Date.now()-ri(600,90000)*1000,label:d.name.length>14?d.name.slice(0,13)+'…':d.name}));
+let mnSel='pc',mnFw=true,mnCd=8,mnMap=null,mnSweeping=false,mnBlocked=ri(1400,3200);
+const MNS={rx:Array.from({length:60},()=>rnd(.6,1.1)),tx:Array.from({length:60},()=>rnd(.08,.18))};
+const MNEV=[];
+function mnEvent(level,msg){MNEV.unshift({t:new Date(),level,msg});if(MNEV.length>50)MNEV.pop();$('#mnEv').innerHTML=MNEV.map(e=>`<div class="lg ${e.level}"><span class="lt">${clock(e.t)}</span><span class="ll">${e.level}</span><span class="lm">${esc(e.msg)}</span></div>`).join('')}
+function fmtUp(ms){const s=Math.floor(ms/1000);return `${Math.floor(s/86400)}d ${pad(Math.floor(s/3600)%24)}h ${pad(Math.floor(s/60)%60)}m`}
+function renderDevList(){$('#mnDevs').innerHTML=DEVICES.map(d=>`<div class="dev ${mnSel===d.id?'on':''} ${d.up?'':'down'}" data-d="${d.id}"><i class="dot ${d.up?'ok':'off'}"></i><div><b>${d.name}</b><span>${d.ip} · ${d.kind}</span></div><em>${d.up?(d.rx+d.tx<1000?(d.rx+d.tx).toFixed(0)+' kb/s':((d.rx+d.tx)/1000).toFixed(1)+' Mb/s'):'—'}</em></div>`).join('');$('#mnCount').textContent=`${DEVICES.filter(d=>d.up).length}/${DEVICES.length} ONLINE`}
+function renderDevDetail(){const d=DEVICES.find(x=>x.id===mnSel);if(!d)return;
+ $('#mnDetail').innerHTML=`<div class="dd-head"><b>${d.name}</b><span class="tag ${d.up?'ok':'off'}">${d.up?'CONNECTED':'DISCONNECTED'}</span></div><div class="kvs col"><div><span>TYPE</span><b>${d.kind}</b></div><div><span>IP ADDRESS</span><b>${d.ip}</b></div><div><span>MAC (FICTIONAL)</span><b>${d.mac}</b></div><div><span>VENDOR</span><b>${d.vendor}</b></div><div><span>SYSTEM</span><b>${d.os}</b></div><div><span>LINK</span><b>${d.link}</b></div><div><span>${d.up?'UPTIME':'LAST SEEN'}</span><b>${d.up?fmtUp(Date.now()-d.since):clock(new Date(d.since))}</b></div><div><span>DOWN / UP</span><b>${d.up?d.rx.toFixed(0)+' / '+d.tx.toFixed(0)+' kb/s':'—'}</b></div><div><span>DATA TODAY</span><b>${fmt(Math.round(d.tot))} MB</b></div><div><span>SERVICES</span><b>${d.svc.join(', ')}</b></div></div><canvas id="mnDevCv" class="cv sm"></canvas>
+ ${d.id==='rt'?'<p class="dim sm">The gateway is always online in this simulation.</p>':`<div class="btnrow"><button class="btn" data-toggle="${d.id}">${d.up?'SIMULATE DISCONNECT':'SIMULATE RECONNECT'}</button><button class="btn" data-ping="${d.id}">SIMULATED PING</button></div>`}<pre class="pingout" id="pingOut"></pre>`;drawDevSpark()}
+function drawDevSpark(){const d=DEVICES.find(x=>x.id===mnSel);if(d&&$('#mnDevCv'))drawLines($('#mnDevCv'),[{data:d.hist,color:COL.g}],{unit:' kb'})}
+function setDev(d,up,quiet){if(d.up===up)return;d.up=up;d.since=Date.now();if(up){d.rx=ri(5,60)}else{d.rx=d.tx=0}const n=mnMap.map[d.id];n.status=up?'on':'off';mnMap.pulse(d.id,up?COL.g:COL.r);
+ if(!quiet){mnEvent(up?'INFO':'WARN',`${d.name} (${d.ip}) ${up?'connected to':'disconnected from'} network`);if(up)Snd.ok()}renderDevList();if(mnSel===d.id)renderDevDetail()}
+function mnCycle(){const c=DEVICES.filter(d=>d.id!=='rt');const d=pick(c);const up=DEVICES.filter(x=>x.up&&x.id!=='rt').length;setDev(d,d.up?(up<=3?true:false):true);if(Math.random()<.25)mnEvent('WARN',`Blocked inbound probe from ${fakeIp('203.0.113')} (simulated)`)}
+function renderMnFw(){$('#mnFwState').textContent=mnFw?'ACTIVE':'DISABLED';$('#mnFwState').className='pm '+(mnFw?'c-g':'c-a');
+ $('#mnFw').innerHTML=`<div class="kvs col"><div><span>STATUS</span><b class="${mnFw?'c-g':'c-a'}">${mnFw?'ACTIVE':'DISABLED'}</b></div><div><span>MODE</span><b>Stateful inspection</b></div><div><span>INBOUND POLICY</span><b>Deny by default</b></div><div><span>INTRUSION PREVENTION</span><b>${mnFw?'ON':'OFF'}</b></div><div><span>BLOCKED TODAY</span><b id="mnBlk">${fmt(mnBlocked)}</b></div><div><span>OPEN WAN PORTS</span><b>0</b></div></div><button class="btn ${mnFw?'':'pri'}" id="mnFwBtn">${mnFw?'DISABLE FIREWALL (SIM)':'ENABLE FIREWALL (SIM)'}</button>`}
+function initMyNet(){
+ mnMap=new GMap($('#mnCv'),{nodes:[{id:'net',label:'INTERNET',sub:'WAN 203.0.113.9',type:'internet',x:.5,y:.12,status:'on'}].concat(DEVICES.map(d=>({id:d.id,label:d.label,sub:d.ip,type:d.type,x:d.x,y:d.y,status:'on'}))),edges:[{a:'net',b:'rt',act:2.5}].concat(DEVICES.filter(d=>d.id!=='rt').map(d=>({a:'rt',b:d.id,act:d.id==='tv'?2:.9}))),
+  onSelect:n=>{if(n.id==='net')return;mnSel=n.id;renderDevList();renderDevDetail();emit({t:'ui',n:'dev',id:n.id})}});
+ [['INFO','Router HomeGate AX6000 booted — firmware 3.1.4 (simulated)'],['INFO','DHCP lease granted: PHONE-LYRA 192.168.1.21'],['WARN','Blocked inbound probe from 203.0.113.17 (simulated)'],['INFO','Firewall ruleset reloaded (14 rules)'],['INFO','TV-HELIOS firmware check passed'],['WARN','Port sweep on WAN interface dropped (simulated)']].reverse().forEach(e=>mnEvent(e[0],e[1]));
+ renderDevList();renderDevDetail();renderMnFw();
+ $('#mnDevs').addEventListener('click',e=>{const r=e.target.closest('[data-d]');if(!r)return;mnSel=r.dataset.d;mnMap.sel=mnMap.map[mnSel];renderDevList();renderDevDetail();Snd.click();emit({t:'ui',n:'dev',id:mnSel})});
+ $('#mnDetail').addEventListener('click',async e=>{const tg=e.target.closest('[data-toggle]');if(tg){const d=DEVICES.find(x=>x.id===tg.dataset.toggle);setDev(d,!d.up);return}
+  const pg=e.target.closest('[data-ping]');if(pg){const d=DEVICES.find(x=>x.id===pg.dataset.ping),out=$('#pingOut');out.textContent='';if(!d.up){out.textContent='Request timed out — device offline (simulated)';return}mnMap.pulse(d.id,COL.b);for(let i=1;i<=4;i++){out.textContent+=`64 bytes from ${d.ip}: icmp_seq=${i} ttl=64 time=${rnd(1,9).toFixed(1)} ms\n`;await sleep(300)}out.textContent+='4 packets received, 0% loss (simulated)'}});
+ $('#mnFw').addEventListener('click',e=>{if(!e.target.closest('#mnFwBtn'))return;mnFw=!mnFw;renderMnFw();mnEvent(mnFw?'INFO':'WARN',`Simulated firewall ${mnFw?'enabled':'disabled'}`);Snd.click()});
+ $('#mnSweep').addEventListener('click',async()=>{if(mnSweeping)return;mnSweeping=true;const btn=$('#mnSweep'),bar=$('#mnSweepBar i');btn.disabled=true;btn.textContent='SWEEPING (SIMULATED)…';mnEvent('INFO','Simulated sweep started on 192.168.1.0/24');
+  for(let i=0;i<DEVICES.length;i++){const d=DEVICES[i];mnMap.pulse(d.id,COL.b);mnEvent(d.up?'INFO':'WARN',d.up?`Sweep: ${d.ip} ${d.name} responded in ${rnd(1,9).toFixed(1)} ms`:`Sweep: ${d.ip} ${d.name} no response`);bar.style.width=Math.round((i+1)/DEVICES.length*100)+'%';Snd.key();await sleep(S.settings.anim?380:60)}
+  mnEvent('INFO',`Sweep complete: ${DEVICES.filter(d=>d.up).length}/${DEVICES.length} devices online (all fictional)`);toast('Sweep complete','All results are simulated');btn.disabled=false;btn.textContent='RUN SIMULATED SWEEP';mnSweeping=false;setTimeout(()=>bar.style.width='0',900);emit({t:'ui',n:'sweep'})});
+ ticks.push(()=>{let rx=0,tx=0;DEVICES.forEach(d=>{if(d.up){d.rx=clamp((d.rx||5)+rnd(-.2,.25)*d.base*.2,2,d.base*3);d.tx=clamp((d.tx||2)+rnd(-.2,.2)*d.base*.07,1,d.base);d.tot+=(d.rx+d.tx)/8/1000;rx+=d.rx;tx+=d.tx}d.hist.push(d.up?d.rx:0);d.hist.shift()});
+  MNS.rx.push(rx/1000);MNS.rx.shift();MNS.tx.push(tx/1000);MNS.tx.shift();if(mnFw&&Math.random()<.4)mnBlocked+=ri(1,4);
+  if(view==='mynet'){$('#mnDown').textContent=(rx/1000).toFixed(1);$('#mnUp').textContent=(tx/1000).toFixed(1);drawLines($('#mnTrCv'),[{data:MNS.rx,color:COL.g},{data:MNS.tx,color:COL.a}],{unit:' Mb'});renderDevList();drawDevSpark();const b=$('#mnBlk');if(b)b.textContent=fmt(mnBlocked);
+   const dd=DEVICES.find(x=>x.id===mnSel),kv=$('#mnDetail .kvs');if(dd&&kv&&dd.up){const bs=$$('b',kv);bs[6].textContent=fmtUp(Date.now()-dd.since);bs[7].textContent=dd.rx.toFixed(0)+' / '+dd.tx.toFixed(0)+' kb/s';bs[8].textContent=fmt(Math.round(dd.tot))+' MB'}
+   if(--mnCd<=0){mnCycle();mnCd=ri(6,12)}}});
+ mnMap.sel=mnMap.map[mnSel]}
+function mnIntro(){if(!mnMap)return;DEVICES.forEach((d,i)=>setTimeout(()=>{if(d.up)mnMap.pulse(d.id,COL.g)},i*220));mnCd=Math.min(mnCd,4)}
+
+/* ================= NETWORK MAP ================= */
+const MPN=[['net','INTERNET','203.0.113.1','internet','Upstream transit',.5,.08],['fw','FW-EDGE-01','10.20.0.1','firewall','Perimeter firewall',.5,.23],['core','R-CORE-01','10.20.0.2','router','Core router',.5,.42],['dist','R-DIST-02','10.20.1.1','router','Distribution router',.26,.52],
+ ['web','SRV-WEB-01','10.20.2.10','server','Web server',.82,.27],['auth','SRV-AUTH-03','10.20.2.30','server','Identity service',.86,.47],['db','SRV-DB-02','10.20.2.20','server','Database server',.7,.62],['mail','SRV-MAIL-05','10.20.2.50','server','Mail gateway',.9,.68],['bkp','SRV-BKP-04','10.20.2.40','server','Backup server',.55,.78],
+ ['ws1','WS-ANALYST-07','10.20.1.17','desktop','Analyst workstation',.08,.34],['ws2','WS-ANALYST-11','10.20.1.21','laptop','Analyst laptop',.06,.58],['ws3','WS-OPS-02','10.20.1.32','desktop','Operations workstation',.22,.78],['mob1','MOB-FIELD-03','10.20.3.13','phone','Field handset',.38,.88],['mob2','MOB-FIELD-08','10.20.3.18','tablet','Field tablet',.08,.8]];
+const MPE=[['net','fw'],['fw','core'],['core','dist'],['core','web'],['core','auth'],['core','db'],['core','mail'],['core','bkp'],['dist','ws1'],['dist','ws2'],['dist','ws3'],['dist','mob1'],['dist','mob2']];
+let mpMap=null,mpSel=null;const MPD={};
+function initMap(){const nodes=MPN.map(n=>({id:n[0],label:n[1],sub:n[2],type:n[3],role:n[4],x:n[5],y:n[6],status:'on'}));nodes.forEach(n=>{MPD[n.id]={load:ri(10,60),lat:ri(1,14)}});
+ mpMap=new GMap($('#mpCv'),{nodes,edges:MPE.map(e=>({a:e[0],b:e[1],act:1.1})),drag:true,onSelect:n=>{mpSel=n;renderMpDetail();emit({t:'ui',n:'mapnode',id:n.id})}});
+ mpMap.map.db.status='warn';mpMap.map.ws3.status='warn';mpMap.map.mob2.status='off';
+ $('#mpDetail').innerHTML='<div class="empty">Select a node on the map to inspect it.</div>';
+ $('#mpDetail').addEventListener('click',async e=>{const n=mpSel;if(!n)return;
+  if(e.target.closest('[data-mping]')){const o=$('#mpPing');o.textContent='';if(n.status==='off'||n.status==='iso'){o.textContent='Host unreachable (simulated)';return}mpMap.pulse(n.id,COL.b);Snd.key();for(let i=1;i<=3;i++){o.textContent+=`reply from ${n.sub}: time=${rnd(1,MPD[n.id].lat+4).toFixed(1)} ms ttl=61\n`;await sleep(280)}o.textContent+='3/3 replies · 0% loss'}
+  if(e.target.closest('[data-miso]')){if(n.status==='iso'){n.status=n.was||'on';mpMap.edges.forEach(x=>{if(x.a===n.id||x.b===n.id)x.cut=false});logEvent('INFO',`${n.label} restored to network`,'MAP')}else if(n.id==='net'||n.id==='core'){toast('Cannot isolate','Critical backbone node','warn');return}else{n.was=n.status;n.status='iso';mpMap.edges.forEach(x=>{if(x.a===n.id||x.b===n.id)x.cut=true});mpMap.pulse(n.id,COL.r);logEvent('WARN',`${n.label} isolated from network (simulated)`,'MAP')}Snd.click();renderMpDetail()}});
+ ticks.push(()=>{if(view!=='map')return;const on=mpMap.nodes.filter(n=>n.status==='on'||n.status==='warn').length;$('#mpOn').textContent=on+'/'+mpMap.nodes.length;$('#mpLat').textContent=ri(6,19);$('#mpPps').textContent=fmt(mpMap.packets.length*ri(60,90)+ri(300,900));if(mpSel&&$('#mpLoad')){$('#mpLoad').textContent=MPD[mpSel.id].load+'%'}
+  Object.values(MPD).forEach(d=>{d.load=clamp(d.load+ri(-4,4),4,97)})})}
+function renderMpDetail(){const n=mpSel;if(!n)return;const d=MPD[n.id],st={on:'ONLINE',warn:'DEGRADED',off:'OFFLINE',iso:'ISOLATED'}[n.status],cl={on:'ok',warn:'warn',off:'off',iso:'err'}[n.status];
+ $('#mpDetail').innerHTML=`<div class="dd-head"><b>${n.label}</b><span class="tag ${cl}">${st}</span></div><div class="kvs col"><div><span>ROLE</span><b>${n.role}</b></div><div><span>ADDRESS</span><b>${n.sub}</b></div><div><span>TYPE</span><b>${n.type.toUpperCase()}</b></div><div><span>LOAD</span><b id="mpLoad">${d.load}%</b></div><div><span>LATENCY</span><b>${d.lat} ms</b></div><div><span>LINKS</span><b>${MPE.filter(e=>e[0]===n.id||e[1]===n.id).length}</b></div><div><span>LAST EVENT</span><b>${n.status==='warn'?'Elevated error rate':n.status==='off'?'Heartbeat lost':n.status==='iso'?'Manual isolation':'Heartbeat OK'}</b></div></div>
+ <div class="btnrow"><button class="btn" data-mping>PING</button><button class="btn ${n.status==='iso'?'pri':'danger'}" data-miso>${n.status==='iso'?'RESTORE':'ISOLATE'}</button></div><pre class="pingout" id="mpPing"></pre>`}
+
+/* ================= SECURITY VIEW ================= */
+const MON=[['IDS (Sentinel)','ok'],['IPS inline','ok'],['SIEM correlator','ok'],['Honeypot grid','warn'],['DLP engine','ok'],['EDR agents','ok']];
+function renderInd(){const h=MON.map(m=>`<div class="ind"><i class="dot ${m[1]}"></i><span>${m[0]}</span><b>${m[1]==='ok'?'OK':'WATCH'}</b></div>`).join('');$('#dashInd').innerHTML=h;$('#scInd').innerHTML=h}
+function renderFw(){$('#fwTbl').innerHTML=`<thead><tr><th>ID</th><th>ACTION</th><th>PROTO</th><th>SOURCE</th><th>DEST</th><th>PORT</th><th class="r">HITS</th><th>ON</th></tr></thead><tbody>${FWR.map((r,i)=>`<tr class="${r.on?'':'dis'}"><td>${r.id}</td><td class="${r.act==='DENY'?'c-r':'c-g'}">${r.act}</td><td>${r.proto}</td><td>${esc(r.src)}</td><td>${esc(r.dst)}</td><td>${r.port}</td><td class="r" data-hit="${i}">${fmt(r.hits)}</td><td><button class="sw sm ${r.on?'on':''}" data-rule="${i}" aria-label="Toggle rule ${r.id}"><i></i></button></td></tr>`).join('')}</tbody>`;$('#fwN').textContent=FWR.filter(r=>r.on).length}
+function initSecurity(){renderInd();renderFw();renderAlerts();
+ $('#fwTbl').addEventListener('click',e=>{const b=e.target.closest('[data-rule]');if(!b)return;const r=FWR[+b.dataset.rule];r.on=!r.on;logEvent('INFO',`Firewall rule ${r.id} ${r.on?'enabled':'disabled'}`,'FIREWALL');Snd.click();renderFw()});
+ $('#logChips').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;logFilter=b.dataset.f;$$('#logChips .chipb').forEach(x=>x.classList.toggle('on',x===b));renderSecLog();Snd.click();emit({t:'ui',n:'logfilter',f:logFilter})});
+ ticks.push(()=>{FWR.forEach((r,i)=>{if(r.on&&Math.random()<.4){r.hits+=ri(1,12);if(view==='security'){const c=$(`[data-hit="${i}"]`);if(c)c.textContent=fmt(r.hits)}}});
+  $('#fwA').textContent=fmt(ri(1800,2600));$('#fwB').textContent=fmt(ri(40,190));
+  if(Math.random()<.18){const m=pick(MON);m[1]=m[0].startsWith('Honey')?(Math.random()<.5?'warn':'ok'):'ok';renderInd()}})}
+
+/* ================= VIEWS ================= */
+const VIEWS=['dashboard','terminal','targets','mynet','map','security','missions','settings','target'];
+function showView(v){if(!VIEWS.includes(v))return;if(v==='target'&&!connected)v='targets';if(view==='target'&&v!=='target')stopTargetUI();view=v;
+ $$('.view').forEach(el=>el.classList.toggle('on',el.id==='view-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v||(v==='target'&&b.dataset.view==='targets')));
+ if(v==='dashboard')$('#slotDashTerm').appendChild($('#termPanel'));if(v==='terminal')$('#slotFullTerm').appendChild($('#termPanel'));
+ if(v==='dashboard'||v==='terminal'){scrollEnd();if(!TERM.typer&&matchMedia('(hover:hover)').matches)setTimeout(()=>TERM.inp.focus(),30)}
+ if(v==='mynet')mnIntro();if(v==='security')renderSecLog();if(v==='missions')renderMissions();
+ $('#main').scrollTop=0;requestAnimationFrame(()=>{drawAllGraphs();GMAPS.forEach(m=>m.cv.offsetParent&&m.draw())});
+ emit({t:'ui',n:'view',v})}
+
+/* ================= STREAM / BOOT / INIT ================= */
+function streamTick(){const st=$('#stream');if(!st)return;const addr=(Math.random()*65535|0).toString(16).padStart(4,'0').toUpperCase();const bytes=hexs(8);const asc=bytes.split(' ').map(h=>{const c=parseInt(h,16);return c>32&&c<127?String.fromCharCode(c):'.'}).join('');
+ st.textContent+=`${addr}  ${bytes}  |${asc}|\n`;const L=st.textContent.split('\n');if(L.length>14)st.textContent=L.slice(-14).join('\n')}
+const BOOT=['NEBULA BIOS 4.2.1 — tactical operations platform','CPU: 8 cores @ 3.60 GHz · virtual · 16 GB','Loading kernel modules ...','Initialising secure enclave','Mounting simulated target registry (4 systems)','Verifying simulation sandbox — external access: DISABLED','Starting network visualiser','Starting event correlation engine','Loading mission database (8 missions)','Restoring operator profile GHOST-7','Calibrating terminal renderer','All subsystems nominal'];
+const LOGO=String.raw` _   _ _____ ____  _   _ _        _    
+| \ | | ____| __ )| | | | |      / \   
+|  \| |  _| |  _ \| | | | |     / _ \  
+| |\  | |___| |_) | |_| | |___ / ___ \ 
+|_| \_|_____|____/ \___/|_____/_/   \_`+'\\';
+let booted=false,skipBoot=false;
+async function runBoot(){$('#bootLogo').textContent=LOGO;const log=$('#bootLog');const skip=()=>{skipBoot=true};document.addEventListener('keydown',skip,{once:true});$('#boot').addEventListener('click',skip,{once:true});
+ for(let i=0;i<BOOT.length;i++){const d=document.createElement('div');d.innerHTML=`<span class="h-ok">[  OK  ]</span> ${esc(BOOT[i])}`;log.appendChild(d);$('#bootBar').style.width=Math.round((i+1)/BOOT.length*100)+'%';$('#bootStatus').textContent=`LOADING ${Math.round((i+1)/BOOT.length*100)}%`;if(!skipBoot)await sleep(ri(90,220))}
+ $('#bootStatus').textContent='READY';const b=$('#bootEnter');b.hidden=false;b.focus();
+ const go=()=>{if(booted)return;booted=true;enterApp()};b.addEventListener('click',go);document.addEventListener('keydown',function h(e){if(e.key==='Enter'&&!booted){document.removeEventListener('keydown',h);go()}})}
+async function enterApp(){Snd.init();Snd.connect();const b=$('#boot');b.classList.add('leaving');
+ const o=document.createElement('div');o.className='fx in dim auth';o.innerHTML='<div class="fx-access"><div class="fx-kicker" id="auL">VERIFYING OPERATOR TOKEN</div><div class="fx-big glitch-t" data-text="ACCESS GRANTED" id="auB" style="opacity:0">ACCESS GRANTED</div><div class="fx-sub" id="auS">GHOST-7 · session '+SESSION+'</div><div class="fx-line"></div></div>';$('#fxLayer').appendChild(o);
+ await sleep(S.settings.anim?700:100);$('#auL').textContent='DECRYPTING PROFILE';await sleep(S.settings.anim?600:100);$('#auL').textContent='CLEARANCE CONFIRMED';$('#auB').style.opacity=1;Snd.grant();await sleep(S.settings.anim?900:150);
+ b.remove();$('#app').hidden=false;o.classList.remove('in');o.classList.add('out');setTimeout(()=>o.remove(),400);
+ showView('dashboard');welcome();mainTick();setTimeout(()=>{const t=TERM.inp;t.focus()},50)}
+async function welcome(){LOGO.split('\n').forEach(l=>line(l,'banner',{ts:false}));
+ await say('NEBULA shell 4.2 — tactical operations simulator','info');await say(`Session ${SESSION} opened for operator GHOST-7`,'ok');await say('Simulation mode: all targets, networks and results are fictional.','warn');
+ await say(S.xp?`Welcome back — ${rankInfo().cur.n}, ${fmt(S.xp)} XP restored.`:'First login detected. Try: help · targets · connect orbital','');await say('Tip: press TYPER MODE for a hacker-typer code stream.','dim');setBusy(false)}
+function bindUI(){
+ $$('#nav button').forEach(b=>b.addEventListener('click',()=>{Snd.click();showView(b.dataset.view)}));
+ document.addEventListener('click',e=>{const go=e.target.closest('[data-go]');if(go&&VIEWS.includes(go.dataset.go)&&!go.classList.contains('btn')){showView(go.dataset.go);return}
+  const ak=e.target.closest('[data-ack]');if(ak){ackAlert(ak.dataset.ack);return}
+  const ma=e.target.closest('[data-mact]');if(ma){S.active=ma.dataset.mact;save();renderMissions();renderObjPanel();Snd.click();return}
+  if(e.target.closest('[data-tback]')){showView('targets');return}if(e.target.closest('[data-tdisc]')){const n=TG[connected].name;disconnectQuiet();line(`Connection to ${n} closed.`,'ok');toast('Disconnected',n);return}});
+ $('#tgCards').addEventListener('click',e=>{const s=e.target.closest('[data-sel]');if(s){sel=s.dataset.sel;updateAll();Snd.click();return}const g=e.target.closest('[data-go]');if(g)connectFromUI(g.dataset.go)});
+ $('#btnSound').addEventListener('click',()=>{S.settings.sound=!S.settings.sound;Snd.init();save();applySettings();Snd.ok()});
+ const full=()=>{try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>toast('Full-screen blocked','Your browser denied the request','warn'))}catch(e){toast('Full-screen unavailable','','warn')}};
+ $('#btnFull').addEventListener('click',full);$('#setFull').addEventListener('click',full);
+ $('#setSound').addEventListener('click',()=>{S.settings.sound=!S.settings.sound;Snd.init();save();applySettings();Snd.ok()});
+ $('#setAnim').addEventListener('click',()=>{S.settings.anim=!S.settings.anim;save();applySettings()});
+ $('#setScan').addEventListener('click',()=>{S.settings.scan=!S.settings.scan;save();applySettings()});
+ $('#setSpeed').addEventListener('input',e=>{S.settings.speed=+e.target.value;save();applySettings()});
+ $('#setBright').addEventListener('input',e=>{S.settings.bright=+e.target.value;save();applySettings()});
+ $('#setTheme').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.settings.theme=b.dataset.v;save();applySettings()});
+ $('#setReset').addEventListener('click',async()=>{if(await confirmBox('Reset progress?','This erases all XP, rank, objectives and completed missions saved in this browser.','RESET')){const st=S.settings;S={...JSON.parse(JSON.stringify(DEF)),settings:st};save();Object.keys(SOLVED).forEach(k=>delete SOLVED[k]);renderRank();renderMissions();renderObjPanel();renderTargetCards();toast('Progress reset','Rank returned to Trainee','warn');logEvent('WARN','Operator progress reset','SYSTEM')}});
+ document.addEventListener('fullscreenchange',()=>{$('#sbMsg').textContent=document.fullscreenElement?'Full-screen mode — press Esc to leave':'Ready'});
+ window.addEventListener('resize',()=>{drawAllGraphs();GMAPS.forEach(m=>m.cv.offsetParent&&m.draw())})}
+function init(){applySettings();$('#tbSession').textContent=SESSION;$('#stSess').textContent=SESSION;
+ bindUI();initMyNet();initMap();initSecurity();
+ ALERTS.length=0;addAlert('LOW','New device joined guest network (dev-ws-052)','DHCP',true);addAlert('LOW','Policy deviation: USB mass storage mounted','EDR',true);addAlert('MEDIUM','Port sweep detected from 198.51.100.77','IDS',true);addAlert('CRITICAL','Anomalous beaconing from 10.77.0.41 to 203.0.113.66','IDS',true);
+ for(let i=0;i<8;i++)bgLog();logEvent('INFO','NEBULA 4.2 initialised — simulation sandbox active','SYSTEM');
+ renderRank();renderObjPanel();renderMissions();renderTargetCards();updateAll();renderSecLog();
+ for(let i=0;i<14;i++)streamTick();
+ setInterval(mainTick,1000);setInterval(streamTick,320);
+ (function bgLoop(){setTimeout(()=>{if(!$('#app').hidden)bgLog();bgLoop()},ri(2500,6000))})();
+ (function alLoop(){setTimeout(()=>{if(!$('#app').hidden&&ALERTS.filter(a=>!a.acked).length<9){const r=Math.random(),sev=r<.4?'LOW':r<.75?'MEDIUM':r<.93?'HIGH':'CRITICAL';addAlert(sev,pick(ALERT_T[sev]))}alLoop()},ri(30000,50000))})();
+ (function glLoop(){setTimeout(()=>{if(!$('#app').hidden)glitch();glLoop()},ri(15000,28000))})();
+ requestAnimationFrame(loop);setBusy(false);renderPrompt();runBoot()}
+init();
+})();
+</script>
+</body>
+</html>
